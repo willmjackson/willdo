@@ -1,3 +1,5 @@
+import React from 'react'
+
 interface ViewSwitcherProps {
   view: 'inbox' | 'today'
   onViewChange: (view: 'inbox' | 'today') => void
@@ -6,12 +8,12 @@ interface ViewSwitcherProps {
 
 export function ViewSwitcher({ view, onViewChange, todayCount }: ViewSwitcherProps) {
   return (
-    <div className="flex gap-1 bg-bg-hover rounded-lg p-1">
+    <div className="flex gap-1 bg-tab-bg rounded-lg p-1">
       <button
         onClick={() => onViewChange('inbox')}
-        className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+        className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
           view === 'inbox'
-            ? 'bg-white text-text shadow-sm'
+            ? 'bg-tab-active text-text shadow-[var(--shadow-tab)]'
             : 'text-text-secondary hover:text-text'
         }`}
       >
@@ -19,17 +21,17 @@ export function ViewSwitcher({ view, onViewChange, todayCount }: ViewSwitcherPro
       </button>
       <button
         onClick={() => onViewChange('today')}
-        className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+        className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 ${
           view === 'today'
-            ? 'bg-white text-text shadow-sm'
+            ? 'bg-tab-active text-text shadow-[var(--shadow-tab)]'
             : 'text-text-secondary hover:text-text'
         }`}
       >
         Today
         {todayCount > 0 && (
-          <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${
+          <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center transition-colors ${
             view === 'today'
-              ? 'bg-accent text-white'
+              ? 'bg-accent text-text-inverse'
               : 'bg-border text-text-secondary'
           }`}>
             {todayCount}

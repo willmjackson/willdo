@@ -1,41 +1,56 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Task, CreateTaskInput } from '../../../shared/types'
+import type { Task, CreateTaskInput, UpdateTaskInput } from '../../../shared/types'
+
+const api = window.api
 
 export function useTasks(view: 'inbox' | 'today') {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    const result = await window.api.listTasks(view)
-    setTasks(result)
+    if (!api) { setLoading(false); return }
+    try {
+      const result = await api.listTasks(view)
+      setTasks(result)
+      api.notifyTrayUpdate()
+    } catch (e) {
+      console.error('Failed to load tasks:', e)
+    }
     setLoading(false)
-    window.api.notifyTrayUpdate()
   }, [view])
 
   useEffect(() => {
     refresh()
+    // Poll every 30s so external changes (e.g. /todo skill) appear
+    const interval = setInterval(refresh, 30_000)
+    return () => clearInterval(interval)
   }, [refresh])
 
   const addTask = useCallback(async (input: CreateTaskInput) => {
-    await window.api.createTask(input)
+    await api.createTask(input)
     await refresh()
   }, [refresh])
 
   const completeTask = useCallback(async (id: string) => {
-    const updated = await window.api.completeTask(id)
+    const updated = await api.completeTask(id)
     await refresh()
     return updated
   }, [refresh])
 
   const deleteTask = useCallback(async (id: string) => {
-    await window.api.deleteTask(id)
+    await api.deleteTask(id)
+    await refresh()
+  }, [refresh])
+
+  const updateTask = useCallback(async (input: UpdateTaskInput) => {
+    await api.updateTask(input)
     await refresh()
   }, [refresh])
 
   const reorderTasks = useCallback(async (id: string, newOrder: number) => {
-    await window.api.reorderTask(id, newOrder)
+    await api.reorderTask(id, newOrder)
     await refresh()
   }, [refresh])
 
-  return { tasks, loading, refresh, addTask, completeTask, deleteTask, reorderTasks }
+  return { tasks, loading, refresh, addTask, completeTask, deleteTask, updateTask, reorderTasks }
 }

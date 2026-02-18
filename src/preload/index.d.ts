@@ -11,7 +11,7 @@ declare global {
       reorderTask: (id: string, newOrder: number) => Promise<void>
       searchTasks: (query: string) => Promise<Task[]>
       getDueTodayCount: () => Promise<number>
-      importFromTodoist: (token: string) => Promise<ImportProgress>
+      importCSV: () => Promise<ImportProgress>
       notifyTrayUpdate: () => void
     }
   }

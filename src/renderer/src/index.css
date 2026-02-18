@@ -1,23 +1,94 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   WillDo Theme — "Golden Hour"
+   A warm, personality-rich palette inspired by Things 3 and Linear.
+   Soft cream canvas, terracotta/amber accents, inky text.
+   ========================================================================== */
+
 @theme {
-  --color-bg: #fafaf8;
-  --color-bg-hover: #f0f0ec;
-  --color-bg-input: #ffffff;
-  --color-border: #e5e5e0;
-  --color-border-focus: #3b82f6;
-  --color-text: #1a1a1a;
-  --color-text-secondary: #6b6b6b;
-  --color-text-muted: #999999;
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
-  --color-danger: #ef4444;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-overdue: #fef2f2;
-  --color-today: #f0fdf4;
-  --color-recurring: #eff6ff;
+  /* ---- Canvas & Surface ---- */
+  --color-bg: #faf7f2;                /* warm parchment */
+  --color-bg-hover: #f3ede4;          /* lightly toasted hover */
+  --color-bg-input: #fffefa;          /* bright cream input */
+  --color-bg-elevated: #ffffff;        /* cards, dialogs, active tabs */
+  --color-bg-sunken: #f0ead9;         /* inset wells, empty states */
+
+  /* ---- Borders ---- */
+  --color-border: #e6dfd2;            /* warm sand border */
+  --color-border-focus: #d4874d;      /* terracotta focus ring */
+  --color-border-subtle: #ece6da;     /* barely-there dividers */
+
+  /* ---- Text ---- */
+  --color-text: #2c2418;              /* warm ink — not pure black */
+  --color-text-secondary: #7a6e5d;    /* weathered wood */
+  --color-text-muted: #b0a694;        /* faded sand */
+  --color-text-inverse: #fffdf8;      /* text on dark surfaces */
+
+  /* ---- Primary / Accent — Terracotta ---- */
+  --color-accent: #d4874d;            /* warm terracotta */
+  --color-accent-hover: #c47538;      /* deeper terracotta */
+  --color-accent-subtle: #fdf0e4;     /* terracotta wash */
+
+  /* ---- Semantic ---- */
+  --color-danger: #c9503c;            /* brick red — overdue */
+  --color-danger-subtle: #fef0ed;     /* overdue badge bg */
+  --color-success: #3a9a5b;           /* forest green — today/complete */
+  --color-success-subtle: #edf8f0;    /* today badge bg */
+  --color-warning: #d49b2a;           /* amber */
+  --color-warning-subtle: #fef8e7;
+
+  /* ---- Status badges ---- */
+  --color-overdue: #fef0ed;           /* warm blush */
+  --color-overdue-text: #c9503c;      /* brick red */
+  --color-today: #edf8f0;            /* mint frost */
+  --color-today-text: #2d7d46;        /* deep green */
+  --color-recurring: #f0ecfb;         /* lavender mist (default/weekly) */
+  --color-recurring-text: #7c5cbf;    /* dusty violet */
+
+  /* Recurrence frequency colors */
+  --color-rec-daily: #fef3e2;         /* warm peach */
+  --color-rec-daily-text: #b8732a;    /* amber */
+  --color-rec-weekly: #f0ecfb;        /* lavender */
+  --color-rec-weekly-text: #7c5cbf;   /* violet */
+  --color-rec-monthly: #e8f4fd;       /* sky frost */
+  --color-rec-monthly-text: #2e7bb5;  /* ocean blue */
+  --color-rec-quarterly: #edf8f0;     /* mint */
+  --color-rec-quarterly-text: #2d7d46;/* forest green */
+  --color-rec-yearly: #fdf0ed;        /* rose */
+  --color-rec-yearly-text: #b8453a;   /* brick */
+
+  /* ---- Interactive (checkbox, drag) ---- */
+  --color-checkbox: #c8bfb0;          /* warm gray ring */
+  --color-checkbox-hover: #a89c8a;    /* darker on hover */
+  --color-checkbox-recurring: #9b82d4; /* violet for recurring */
+  --color-checkbox-recurring-hover: #7c5cbf;
+
+  /* ---- Completion animation ---- */
+  --color-complete-flash: #3a9a5b;    /* green checkmark fill */
+
+  /* ---- Tab switcher ---- */
+  --color-tab-bg: #ede7db;           /* sunken tab bar */
+  --color-tab-active: #fffefa;       /* active tab (lifted) */
+
+  /* ---- Dialog overlay ---- */
+  --color-overlay: rgba(44, 36, 24, 0.45); /* warm dark scrim */
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px rgba(44, 36, 24, 0.06);
+  --shadow-md: 0 4px 12px rgba(44, 36, 24, 0.08);
+  --shadow-lg: 0 8px 30px rgba(44, 36, 24, 0.12);
+  --shadow-tab: 0 1px 3px rgba(44, 36, 24, 0.1), 0 1px 2px rgba(44, 36, 24, 0.06);
+  --shadow-input-focus: 0 0 0 3px rgba(212, 135, 77, 0.15);
+
+  /* ---- Animations ---- */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ==========================================================================
+   Global Styles
+   ========================================================================== */
 
 * {
   -webkit-app-region: no-drag;
@@ -25,10 +96,19 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "SF Pro Text",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
 /* Drag region for title bar */
@@ -36,7 +116,25 @@ body {
   -webkit-app-region: drag;
 }
 
-/* Custom scrollbar */
+/* ==========================================================================
+   Background Texture — subtle warmth
+   ========================================================================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(212, 135, 77, 0.06), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(156, 130, 212, 0.04), transparent);
+}
+
+/* ==========================================================================
+   Custom Scrollbar — slim, warm, macOS-like
+   ========================================================================== */
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -46,10 +144,200 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d1d1;
+  background: var(--color-border);
   border-radius: 3px;
+  transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b0b0b0;
+  background: var(--color-checkbox);
+}
+
+/* Only show scrollbar on hover (macOS-like) */
+.overflow-y-auto {
+  scrollbar-gutter: stable;
+}
+
+.overflow-y-auto:not(:hover)::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* ==========================================================================
+   Animations & Keyframes
+   ========================================================================== */
+
+/* Gentle fade-slide for new items / parse preview */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: slide-in 0.2s var(--ease-smooth) both;
+}
+
+/* Completion burst — the checkbox scales up and glows briefly */
+@keyframes complete-pop {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(58, 154, 91, 0.4);
+  }
+  50% {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 6px rgba(58, 154, 91, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(58, 154, 91, 0);
+  }
+}
+
+.animate-complete {
+  animation: complete-pop 0.4s var(--ease-spring) both;
+}
+
+/* Task row fade-out on completion */
+@keyframes fade-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+.animate-fade-out {
+  animation: fade-out-right 0.3s var(--ease-smooth) both;
+}
+
+/* Recurring task "bounce back" — task stays but checkbox pulses */
+@keyframes recur-pulse {
+  0% { opacity: 1; }
+  40% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.animate-recur {
+  animation: recur-pulse 0.6s var(--ease-smooth) both;
+}
+
+/* Badge appear — used when "Next: ..." pops in */
+@keyframes badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-badge-pop {
+  animation: badge-pop 0.25s var(--ease-spring) both;
+}
+
+/* Toast slide up + fade */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.25s var(--ease-spring) both;
+}
+
+.animate-toast-out {
+  animation: toast-out 0.2s var(--ease-smooth) both;
+}
+
+/* Gentle shimmer for loading state */
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Smooth hover lift for interactive rows */
+@keyframes subtle-lift {
+  to {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* ==========================================================================
+   Component-Specific Styles
+   ========================================================================== */
+
+/* --- Title bar gradient — adds a bit of polish at the top edge --- */
+.drag-region {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 254, 250, 0.9),
+    var(--color-bg)
+  );
+}
+
+/* --- Input field glow on focus --- */
+input:focus {
+  box-shadow: var(--shadow-input-focus);
+}
+
+/* --- Task row hover — warm tinted highlight instead of flat gray --- */
+/* (Applied via Tailwind `hover:bg-bg-hover`, but this adds a left accent line) */
+
+/* --- Active tab — subtle inner glow for the "lifted paper" look --- */
+
+/* --- Import dialog backdrop blur for depth --- */
+.fixed.inset-0 {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ==========================================================================
+   Selection Color — match the brand
+   ========================================================================== */
+
+::selection {
+  background: rgba(212, 135, 77, 0.2);
+  color: var(--color-text);
+}
+
+/* ==========================================================================
+   Placeholder styling
+   ========================================================================== */
+
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
 }

@@ -24,6 +24,9 @@ export interface UpdateTaskInput {
   id: string
   title?: string
   due_date?: string | null
+  rrule?: string | null
+  rrule_human?: string | null
+  is_recurring?: boolean
   is_completed?: boolean
   sort_order?: number
 }

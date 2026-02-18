@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
 import {
   listTasks,
   createTask,
@@ -9,8 +9,13 @@ import {
   searchTasks,
   getDueTodayCount
 } from './db'
-import { importFromTodoist } from './todoist-import'
+import { pickAndImportCSV } from './todoist-import'
 import type { CreateTaskInput, UpdateTaskInput } from '../shared/types'
+
+function updateDockBadge(): void {
+  const count = getDueTodayCount()
+  app.dock?.setBadge(count > 0 ? String(count) : '')
+}
 
 export function registerIpcHandlers(): void {
   ipcMain.handle('tasks:list', (_event, view: 'inbox' | 'today') => {
@@ -18,19 +23,26 @@ export function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('tasks:create', (_event, input: CreateTaskInput) => {
-    return createTask(input)
+    const task = createTask(input)
+    updateDockBadge()
+    return task
   })
 
   ipcMain.handle('tasks:update', (_event, input: UpdateTaskInput) => {
-    return updateTask(input)
+    const task = updateTask(input)
+    updateDockBadge()
+    return task
   })
 
   ipcMain.handle('tasks:complete', (_event, id: string) => {
-    return completeTask(id)
+    const task = completeTask(id)
+    updateDockBadge()
+    return task
   })
 
   ipcMain.handle('tasks:delete', (_event, id: string) => {
-    return deleteTask(id)
+    deleteTask(id)
+    updateDockBadge()
   })
 
   ipcMain.handle('tasks:reorder', (_event, id: string, newOrder: number) => {
@@ -45,7 +57,12 @@ export function registerIpcHandlers(): void {
     return getDueTodayCount()
   })
 
-  ipcMain.handle('todoist:import', (_event, token: string) => {
-    return importFromTodoist(token)
+  ipcMain.handle('todoist:import-csv', () => {
+    const result = pickAndImportCSV()
+    updateDockBadge()
+    return result
   })
+
+  // Set initial badge on startup
+  updateDockBadge()
 }

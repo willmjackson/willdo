@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { formatRelativeDate, isOverdue, isToday } from '../lib/dates'
@@ -9,11 +9,11 @@ interface TaskItemProps {
   task: Task
   onComplete: (id: string) => Promise<Task>
   onDelete: (id: string) => Promise<void>
+  onEdit: (task: Task) => void
 }
 
-export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onComplete, onDelete, onEdit }: TaskItemProps) {
   const [completing, setCompleting] = useState(false)
-  const [nextDate, setNextDate] = useState<string | null>(null)
 
   const {
     attributes,
@@ -31,12 +31,13 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
 
   const handleComplete = async () => {
     setCompleting(true)
-    const updated = await onComplete(task.id)
-    if (task.is_recurring && updated.due_date !== task.due_date) {
-      setNextDate(updated.due_date)
-      setTimeout(() => setNextDate(null), 2000)
+    try {
+      await onComplete(task.id)
+    } catch (e) {
+      console.error('Failed to complete task:', e)
+    } finally {
+      setCompleting(false)
     }
-    setCompleting(false)
   }
 
   const overdue = isOverdue(task.due_date)
@@ -47,7 +48,7 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
       ref={setNodeRef}
       style={style}
       className={`group flex items-start gap-2 px-4 py-2.5 transition-colors
-                   hover:bg-bg-hover
+                   hover:bg-bg-hover rounded-lg mx-1
                    ${isDragging ? 'opacity-50 bg-bg-hover' : ''}
                    ${completing ? 'opacity-60' : ''}`}
     >
@@ -66,11 +67,12 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
       {/* Checkbox */}
       <button
         onClick={handleComplete}
-        className={`mt-0.5 shrink-0 w-[18px] h-[18px] rounded-full border-2 transition-colors
+        className={`mt-0.5 shrink-0 w-[18px] h-[18px] rounded-full border-2 transition-all
                      flex items-center justify-center
+                     ${completing ? 'animate-complete' : ''}
                      ${task.is_recurring
-                       ? 'border-blue-400 hover:border-blue-600 hover:bg-blue-50'
-                       : 'border-gray-300 hover:border-gray-500 hover:bg-gray-50'
+                       ? 'border-checkbox-recurring hover:border-checkbox-recurring-hover hover:bg-recurring'
+                       : 'border-checkbox hover:border-checkbox-hover hover:bg-accent-subtle'
                      }`}
       >
         {completing && (
@@ -80,14 +82,14 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
         )}
       </button>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
+      {/* Content — click to edit */}
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onEdit(task)}>
         <div className="text-sm leading-snug">{task.title}</div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {task.due_date && (
-            <span className={`text-xs px-1.5 py-0.5 rounded ${
-              overdue ? 'text-danger bg-overdue font-medium' :
-              today ? 'text-green-700 bg-today font-medium' :
+            <span className={`text-xs px-1.5 py-0.5 rounded-md ${
+              overdue ? 'text-overdue-text bg-overdue font-medium' :
+              today ? 'text-today-text bg-today font-medium' :
               'text-text-secondary'
             }`}>
               {formatRelativeDate(task.due_date)}
@@ -95,11 +97,6 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
           )}
           {task.is_recurring === 1 && task.rrule_human && (
             <RecurrenceTag rruleHuman={task.rrule_human} />
-          )}
-          {nextDate && (
-            <span className="text-xs text-success animate-in">
-              Next: {formatRelativeDate(nextDate)}
-            </span>
           )}
         </div>
       </div>

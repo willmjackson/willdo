@@ -29,6 +29,11 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // Open DevTools in dev
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
+  }
+
   // Load renderer
   if (process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])

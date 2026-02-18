@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { formatRelativeDate } from '../lib/dates'
 import type { CreateTaskInput } from '../../../shared/types'
@@ -47,46 +47,49 @@ export function TaskInput({ onAdd }: TaskInputProps) {
 
   return (
     <div className="px-4 pb-3">
-      <div className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Add a task... (try &quot;Buy milk tomorrow every week&quot;)"
-          className="w-full px-3 py-2.5 bg-bg-input border border-border rounded-lg text-sm
-                     placeholder:text-text-muted
-                     focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
-                     transition-colors"
-        />
-        {hasContent && (
+      <input
+        ref={inputRef}
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder='Add a task... (try "Buy milk tomorrow every week")'
+        className="w-full px-3 py-2.5 bg-bg-input border border-border rounded-lg text-sm
+                   placeholder:text-text-muted
+                   focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
+                   transition-colors"
+      />
+
+      {/* Live parse preview + Add button row */}
+      {hasContent && (
+        <div className="mt-2 flex items-center justify-between gap-2 animate-in">
+          <div className="flex items-center gap-2 text-xs min-w-0">
+            {hasExtras && (
+              <>
+                {parsed.title && (
+                  <span className="text-text font-medium truncate">{parsed.title}</span>
+                )}
+                {parsed.due_date && (
+                  <span className="shrink-0 bg-bg-hover rounded-md px-1.5 py-0.5 text-text-secondary">
+                    {formatRelativeDate(parsed.due_date)}
+                  </span>
+                )}
+                {parsed.rrule_human && (
+                  <span className="shrink-0 text-recurring-text bg-recurring rounded-md px-1.5 py-0.5">
+                    {parsed.rrule_human}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
           <button
             onClick={handleSubmit}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-accent hover:text-accent-hover
-                       text-sm font-medium px-2 py-1 rounded transition-colors"
+            className="shrink-0 text-xs font-semibold px-3 py-1 rounded-md
+                       bg-accent text-text-inverse hover:bg-accent-hover
+                       transition-colors"
           >
             Add
           </button>
-        )}
-      </div>
-
-      {/* Live parse preview */}
-      {hasContent && hasExtras && (
-        <div className="mt-1.5 px-1 flex items-center gap-2 text-xs text-text-secondary animate-in">
-          {parsed.title && (
-            <span className="text-text font-medium truncate">{parsed.title}</span>
-          )}
-          {parsed.due_date && (
-            <span className="shrink-0 bg-bg-hover rounded px-1.5 py-0.5">
-              {formatRelativeDate(parsed.due_date)}
-            </span>
-          )}
-          {parsed.rrule_human && (
-            <span className="shrink-0 text-blue-600 bg-recurring rounded px-1.5 py-0.5">
-              {parsed.rrule_human}
-            </span>
-          )}
         </div>
       )}
     </div>

@@ -26,8 +26,8 @@ const api = {
   getDueTodayCount: (): Promise<number> =>
     ipcRenderer.invoke('tasks:due-today-count'),
 
-  importFromTodoist: (token: string): Promise<ImportProgress> =>
-    ipcRenderer.invoke('todoist:import', token),
+  importCSV: (): Promise<ImportProgress> =>
+    ipcRenderer.invoke('todoist:import-csv'),
 
   notifyTrayUpdate: (): void => {
     ipcRenderer.send('tray:update')

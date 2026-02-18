@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   DndContext,
   closestCenter,
@@ -20,11 +21,12 @@ interface TaskListProps {
   tasks: Task[]
   onComplete: (id: string) => Promise<Task>
   onDelete: (id: string) => Promise<void>
+  onEdit: (task: Task) => void
   onReorder: (id: string, newOrder: number) => Promise<void>
   view: 'inbox' | 'today'
 }
 
-export function TaskList({ tasks, onComplete, onDelete, onReorder, view }: TaskListProps) {
+export function TaskList({ tasks, onComplete, onDelete, onEdit, onReorder, view }: TaskListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 }
@@ -60,8 +62,11 @@ export function TaskList({ tasks, onComplete, onDelete, onReorder, view }: TaskL
 
   if (tasks.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
-        {view === 'today' ? 'Nothing due today' : 'No tasks yet — add one above!'}
+      <div className="flex-1 flex flex-col items-center justify-center text-text-muted gap-1">
+        <span className="text-2xl">{view === 'today' ? '\u2600\ufe0f' : '\u270f\ufe0f'}</span>
+        <span className="text-sm">
+          {view === 'today' ? 'Nothing due today' : 'No tasks yet'}
+        </span>
       </div>
     )
   }
@@ -81,6 +86,7 @@ export function TaskList({ tasks, onComplete, onDelete, onReorder, view }: TaskL
               task={task}
               onComplete={onComplete}
               onDelete={onDelete}
+              onEdit={onEdit}
             />
           ))}
         </SortableContext>

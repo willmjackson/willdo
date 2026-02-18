@@ -16,6 +16,10 @@ const MONTH_MAP: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
 }
 
+const FREQ_MAP: Record<string, string> = {
+  day: 'DAILY', week: 'WEEKLY', month: 'MONTHLY', year: 'YEARLY'
+}
+
 type PatternEntry = [RegExp, (m: RegExpMatchArray) => RecurrenceResult]
 
 const patterns: PatternEntry[] = [
@@ -26,17 +30,14 @@ const patterns: PatternEntry[] = [
   })],
 
   // every N days/weeks/months/years
-  [/\bevery\s+(\d+)\s+(day|week|month|year)s?\b/i, (m) => {
-    const freq = m[2].toUpperCase() + 'LY'
-    return {
-      rrule: `FREQ=${freq};INTERVAL=${m[1]}`,
-      rrule_human: m[0].toLowerCase()
-    }
-  }],
+  [/\bevery\s+(\d+)\s+(day|week|month|year)s?\b/i, (m) => ({
+    rrule: `FREQ=${FREQ_MAP[m[2].toLowerCase()]};INTERVAL=${m[1]}`,
+    rrule_human: m[0].toLowerCase()
+  })],
 
   // every other week/month
   [/\bevery\s+other\s+(week|month)\b/i, (m) => ({
-    rrule: `FREQ=${m[1].toUpperCase()}LY;INTERVAL=2`,
+    rrule: `FREQ=${FREQ_MAP[m[1].toLowerCase()]};INTERVAL=2`,
     rrule_human: m[0].toLowerCase()
   })],
 
@@ -70,7 +71,25 @@ const patterns: PatternEntry[] = [
     rrule_human: m[0].toLowerCase()
   })],
 
-  // every month / monthly
+  // "on the 1st of every month" / "the 15th of every month"
+  [/\b(?:on\s+)?the\s+(\d{1,2})(?:st|nd|rd|th)\s+of\s+every\s+month\b/i, (m) => ({
+    rrule: `FREQ=MONTHLY;BYMONTHDAY=${m[1]}`,
+    rrule_human: m[0].toLowerCase()
+  })],
+
+  // "every month on the 1st"
+  [/\bevery\s+month\s+on\s+the\s+(\d{1,2})(?:st|nd|rd|th)\b/i, (m) => ({
+    rrule: `FREQ=MONTHLY;BYMONTHDAY=${m[1]}`,
+    rrule_human: m[0].toLowerCase()
+  })],
+
+  // "every 1st of the month" / "every 15th of the month"
+  [/\bevery\s+(\d{1,2})(?:st|nd|rd|th)\s+of\s+the\s+month\b/i, (m) => ({
+    rrule: `FREQ=MONTHLY;BYMONTHDAY=${m[1]}`,
+    rrule_human: m[0].toLowerCase()
+  })],
+
+  // every month / monthly (must come AFTER the more specific monthly patterns above)
   [/\b(?:every\s+month|monthly)\b/i, (m) => ({
     rrule: 'FREQ=MONTHLY',
     rrule_human: m[0].toLowerCase()

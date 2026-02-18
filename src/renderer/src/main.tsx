@@ -3,8 +3,36 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, fontFamily: 'monospace', fontSize: 13 }}>
+          <h2 style={{ color: 'red' }}>Renderer Error</h2>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{this.state.error.message}</pre>
+          <pre style={{ whiteSpace: 'pre-wrap', color: '#666', fontSize: 11 }}>
+            {this.state.error.stack}
+          </pre>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 )
