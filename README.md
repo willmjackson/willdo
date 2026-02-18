@@ -7,6 +7,10 @@ A local-first todo app for macOS, built to replace Todoist. Natural language tas
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 
+<p align="center">
+  <img src="resources/screenshot.png" alt="WillDo app screenshot" width="480" />
+</p>
+
 ## Features
 
 - **Natural language input** — type "File taxes by April 15 every quarter" and it parses the title, date, and recurrence
