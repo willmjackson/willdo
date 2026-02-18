@@ -58,7 +58,13 @@ SQLite database stored at `~/Library/Application Support/willdo/willdo.db`. Tabl
 
 ## Claude Code Skill
 
-Use `/todo` from Claude Code to manage tasks without opening the app:
+To enable the `/todo` skill, symlink it into your Claude Code skills directory:
+
+```bash
+ln -s $(pwd)/skill/willdo-todo ~/.claude/skills/willdo-todo
+```
+
+Then use `/todo` from Claude Code to manage tasks without opening the app:
 
 ```
 /todo              # list tasks due today
