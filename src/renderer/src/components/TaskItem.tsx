@@ -1,0 +1,119 @@
+import { useState } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { formatRelativeDate, isOverdue, isToday } from '../lib/dates'
+import { RecurrenceTag } from './RecurrenceTag'
+import type { Task } from '../../../shared/types'
+
+interface TaskItemProps {
+  task: Task
+  onComplete: (id: string) => Promise<Task>
+  onDelete: (id: string) => Promise<void>
+}
+
+export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
+  const [completing, setCompleting] = useState(false)
+  const [nextDate, setNextDate] = useState<string | null>(null)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  const handleComplete = async () => {
+    setCompleting(true)
+    const updated = await onComplete(task.id)
+    if (task.is_recurring && updated.due_date !== task.due_date) {
+      setNextDate(updated.due_date)
+      setTimeout(() => setNextDate(null), 2000)
+    }
+    setCompleting(false)
+  }
+
+  const overdue = isOverdue(task.due_date)
+  const today = isToday(task.due_date)
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-start gap-2 px-4 py-2.5 transition-colors
+                   hover:bg-bg-hover
+                   ${isDragging ? 'opacity-50 bg-bg-hover' : ''}
+                   ${completing ? 'opacity-60' : ''}`}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="mt-1 cursor-grab active:cursor-grabbing text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        tabIndex={-1}
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M10 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-4 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm1-5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm1-5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+        </svg>
+      </button>
+
+      {/* Checkbox */}
+      <button
+        onClick={handleComplete}
+        className={`mt-0.5 shrink-0 w-[18px] h-[18px] rounded-full border-2 transition-colors
+                     flex items-center justify-center
+                     ${task.is_recurring
+                       ? 'border-blue-400 hover:border-blue-600 hover:bg-blue-50'
+                       : 'border-gray-300 hover:border-gray-500 hover:bg-gray-50'
+                     }`}
+      >
+        {completing && (
+          <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" className="text-success">
+            <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm leading-snug">{task.title}</div>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {task.due_date && (
+            <span className={`text-xs px-1.5 py-0.5 rounded ${
+              overdue ? 'text-danger bg-overdue font-medium' :
+              today ? 'text-green-700 bg-today font-medium' :
+              'text-text-secondary'
+            }`}>
+              {formatRelativeDate(task.due_date)}
+            </span>
+          )}
+          {task.is_recurring === 1 && task.rrule_human && (
+            <RecurrenceTag rruleHuman={task.rrule_human} />
+          )}
+          {nextDate && (
+            <span className="text-xs text-success animate-in">
+              Next: {formatRelativeDate(nextDate)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Delete */}
+      <button
+        onClick={() => onDelete(task.id)}
+        className="mt-1 text-text-muted opacity-0 group-hover:opacity-100 hover:text-danger transition-all shrink-0"
+        tabIndex={-1}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" />
+        </svg>
+      </button>
+    </div>
+  )
+}
