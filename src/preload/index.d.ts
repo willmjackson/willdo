@@ -1,4 +1,4 @@
-import type { CreateTaskInput, UpdateTaskInput, Task, ImportProgress } from '../shared/types'
+import type { CreateTaskInput, UpdateTaskInput, Task, ImportProgress, CompletedTaskRow, CompletionStats } from '../shared/types'
 
 declare global {
   interface Window {
@@ -13,6 +13,11 @@ declare global {
       getDueTodayCount: () => Promise<number>
       importCSV: () => Promise<ImportProgress>
       notifyTrayUpdate: () => void
+      launchClaude: (task: Task) => Promise<void>
+      getSetting: (key: string) => Promise<string | null>
+      setSetting: (key: string, value: string) => Promise<void>
+      listCompletedTasks: (limit?: number) => Promise<CompletedTaskRow[]>
+      getCompletionStats: () => Promise<CompletionStats>
     }
   }
 }

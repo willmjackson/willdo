@@ -22,11 +22,12 @@ interface TaskListProps {
   onComplete: (id: string) => Promise<Task>
   onDelete: (id: string) => Promise<void>
   onEdit: (task: Task) => void
+  onLaunchClaude: (task: Task) => void
   onReorder: (id: string, newOrder: number) => Promise<void>
   view: 'inbox' | 'today'
 }
 
-export function TaskList({ tasks, onComplete, onDelete, onEdit, onReorder, view }: TaskListProps) {
+export function TaskList({ tasks, onComplete, onDelete, onEdit, onLaunchClaude, onReorder, view }: TaskListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 }
@@ -87,6 +88,7 @@ export function TaskList({ tasks, onComplete, onDelete, onEdit, onReorder, view 
               onComplete={onComplete}
               onDelete={onDelete}
               onEdit={onEdit}
+              onLaunchClaude={onLaunchClaude}
             />
           ))}
         </SortableContext>

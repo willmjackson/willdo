@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'path'
-import type { Task, CreateTaskInput, UpdateTaskInput, Completion } from '../shared/types'
+import type { Task, CreateTaskInput, UpdateTaskInput, Completion, CompletedTaskRow, CompletionStats } from '../shared/types'
 
 let db: Database.Database
 
@@ -44,6 +44,10 @@ function migrate(): void {
       value TEXT
     );
   `)
+
+  // Idempotent column additions
+  try { db.exec('ALTER TABLE tasks ADD COLUMN claude_launched_at TEXT') } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE completions ADD COLUMN launched_with_claude INTEGER DEFAULT 0') } catch { /* already exists */ }
 }
 
 /**
@@ -170,14 +174,19 @@ export function updateTask(input: UpdateTaskInput): Task {
   return db.prepare('SELECT * FROM tasks WHERE id = ?').get(input.id) as Task
 }
 
+export function markClaudeLaunched(id: string): void {
+  db.prepare("UPDATE tasks SET claude_launched_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(id)
+}
+
 export function completeTask(id: string): Task {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task | undefined
   if (!task) throw new Error(`Task not found: ${id}`)
 
-  // Log completion
+  // Log completion, propagating Claude flag
+  const launchedWithClaude = task.claude_launched_at ? 1 : 0
   db.prepare(`
-    INSERT INTO completions (task_id, due_date) VALUES (?, ?)
-  `).run(id, task.due_date)
+    INSERT INTO completions (task_id, due_date, launched_with_claude) VALUES (?, ?, ?)
+  `).run(id, task.due_date, launchedWithClaude)
 
   if (task.is_recurring && task.rrule) {
     // Find next occurrence strictly after the current due date
@@ -185,16 +194,51 @@ export function completeTask(id: string): Task {
     const nextDate = computeNextOccurrence(task.rrule, currentDue, currentDue)
 
     if (nextDate) {
-      db.prepare("UPDATE tasks SET due_date = ?, updated_at = datetime('now') WHERE id = ?").run(nextDate, id)
+      // Reset claude_launched_at so recurring tasks start fresh each cycle
+      db.prepare("UPDATE tasks SET due_date = ?, claude_launched_at = NULL, updated_at = datetime('now') WHERE id = ?").run(nextDate, id)
     } else {
-      // No future occurrence found — mark complete
-      db.prepare("UPDATE tasks SET is_completed = 1, updated_at = datetime('now') WHERE id = ?").run(id)
+      db.prepare("UPDATE tasks SET is_completed = 1, claude_launched_at = NULL, updated_at = datetime('now') WHERE id = ?").run(id)
     }
   } else {
-    db.prepare("UPDATE tasks SET is_completed = 1, updated_at = datetime('now') WHERE id = ?").run(id)
+    db.prepare("UPDATE tasks SET is_completed = 1, claude_launched_at = NULL, updated_at = datetime('now') WHERE id = ?").run(id)
   }
 
   return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task
+}
+
+export function listCompletedTasks(limit = 100): CompletedTaskRow[] {
+  return db.prepare(`
+    SELECT
+      c.id          AS completion_id,
+      c.task_id,
+      t.title,
+      c.completed_at,
+      c.due_date,
+      c.launched_with_claude,
+      t.is_recurring,
+      t.rrule_human
+    FROM completions c
+    JOIN tasks t ON t.id = c.task_id
+    ORDER BY c.completed_at DESC
+    LIMIT ?
+  `).all(limit) as CompletedTaskRow[]
+}
+
+export function getCompletionStats(): CompletionStats {
+  const row = db.prepare(`
+    SELECT
+      SUM(CASE WHEN date(completed_at) = date('now') THEN 1 ELSE 0 END)                       AS today,
+      SUM(CASE WHEN completed_at >= datetime('now', 'weekday 0', '-7 days') THEN 1 ELSE 0 END) AS thisWeek,
+      COUNT(*)                                                                                  AS total,
+      SUM(launched_with_claude)                                                                 AS claudeAssisted
+    FROM completions
+  `).get() as { today: number; thisWeek: number; total: number; claudeAssisted: number }
+  return {
+    today: row.today ?? 0,
+    thisWeek: row.thisWeek ?? 0,
+    total: row.total ?? 0,
+    claudeAssisted: row.claudeAssisted ?? 0
+  }
 }
 
 export function deleteTask(id: string): void {
@@ -249,6 +293,15 @@ export function createTaskFromImport(input: CreateTaskInput & { todoist_id: stri
     input.todoist_id
   )
   return db.prepare('SELECT * FROM tasks WHERE rowid = ?').get(result.lastInsertRowid) as Task
+}
+
+export function getSetting(key: string): string | null {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined
+  return row?.value ?? null
+}
+
+export function setSetting(key: string, value: string): void {
+  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value)
 }
 
 export function getDb(): Database.Database {

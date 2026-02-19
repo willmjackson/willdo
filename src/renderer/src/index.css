@@ -58,6 +58,10 @@
   --color-rec-yearly: #fdf0ed;        /* rose */
   --color-rec-yearly-text: #b8453a;   /* brick */
 
+  /* ---- Claude badge ---- */
+  --color-claude: #e8f4f8;
+  --color-claude-text: #2a7c8f;
+
   /* ---- Interactive (checkbox, drag) ---- */
   --color-checkbox: #c8bfb0;          /* warm gray ring */
   --color-checkbox-hover: #a89c8a;    /* darker on hover */

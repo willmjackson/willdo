@@ -10,9 +10,10 @@ interface TaskItemProps {
   onComplete: (id: string) => Promise<Task>
   onDelete: (id: string) => Promise<void>
   onEdit: (task: Task) => void
+  onLaunchClaude: (task: Task) => void
 }
 
-export function TaskItem({ task, onComplete, onDelete, onEdit }: TaskItemProps) {
+export function TaskItem({ task, onComplete, onDelete, onEdit, onLaunchClaude }: TaskItemProps) {
   const [completing, setCompleting] = useState(false)
 
   const {
@@ -100,6 +101,18 @@ export function TaskItem({ task, onComplete, onDelete, onEdit }: TaskItemProps) 
           )}
         </div>
       </div>
+
+      {/* Launch Claude */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onLaunchClaude(task) }}
+        className="mt-1 text-text-muted opacity-0 group-hover:opacity-100 hover:text-accent transition-all shrink-0"
+        tabIndex={-1}
+        title="Launch Claude Code"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25Zm1.75-.25a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V2.75a.25.25 0 0 0-.25-.25ZM7.25 12a.75.75 0 0 1 .75-.75h3.25a.75.75 0 0 1 0 1.5H8a.75.75 0 0 1-.75-.75Zm-4.03-5.22a.75.75 0 0 1 1.06 0l2.5 2.5a.75.75 0 0 1 0 1.06l-2.5 2.5a.75.75 0 0 1-1.06-1.06L5.19 9.75 3.22 7.78a.75.75 0 0 1 0-1.06Z" />
+        </svg>
+      </button>
 
       {/* Delete */}
       <button

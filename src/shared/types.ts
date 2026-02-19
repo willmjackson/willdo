@@ -10,6 +10,7 @@ export interface Task {
   created_at: string
   updated_at: string
   todoist_id: string | null
+  claude_launched_at: string | null
 }
 
 export interface CreateTaskInput {
@@ -65,6 +66,24 @@ export interface ImportProgress {
   failed: string[]
 }
 
+export interface CompletedTaskRow {
+  completion_id: string
+  task_id: string
+  title: string
+  completed_at: string
+  due_date: string | null
+  launched_with_claude: number
+  is_recurring: number
+  rrule_human: string | null
+}
+
+export interface CompletionStats {
+  today: number
+  thisWeek: number
+  total: number
+  claudeAssisted: number
+}
+
 // IPC Channel types
 export type IpcChannels = {
   'tasks:list': { args: [view: 'inbox' | 'today']; return: Task[] }
@@ -76,4 +95,6 @@ export type IpcChannels = {
   'tasks:search': { args: [query: string]; return: Task[] }
   'tasks:due-today-count': { args: []; return: number }
   'todoist:import': { args: [token: string]; return: ImportProgress }
+  'history:list': { args: [limit?: number]; return: CompletedTaskRow[] }
+  'history:stats': { args: []; return: CompletionStats }
 }

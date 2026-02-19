@@ -1,8 +1,10 @@
 import React from 'react'
 
+export type ViewType = 'inbox' | 'today' | 'history'
+
 interface ViewSwitcherProps {
-  view: 'inbox' | 'today'
-  onViewChange: (view: 'inbox' | 'today') => void
+  view: ViewType
+  onViewChange: (view: ViewType) => void
   todayCount: number
 }
 
@@ -37,6 +39,16 @@ export function ViewSwitcher({ view, onViewChange, todayCount }: ViewSwitcherPro
             {todayCount}
           </span>
         )}
+      </button>
+      <button
+        onClick={() => onViewChange('history')}
+        className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+          view === 'history'
+            ? 'bg-tab-active text-text shadow-[var(--shadow-tab)]'
+            : 'text-text-secondary hover:text-text'
+        }`}
+      >
+        History
       </button>
     </div>
   )
