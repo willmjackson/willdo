@@ -3,6 +3,8 @@ import path from 'path'
 import { initDb } from './db'
 import { registerIpcHandlers } from './ipc-handlers'
 import { createTray, updateTray } from './tray'
+import { startSync, stopSync } from './sync'
+import { startSync, stopSync } from './sync'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -51,7 +53,8 @@ function createWindow(): void {
 }
 
 app.on('before-quit', () => {
-  (app as { isQuitting: boolean }).isQuitting = true
+  stopSync()
+  ;(app as { isQuitting: boolean }).isQuitting = true
 })
 
 app.whenReady().then(() => {
@@ -63,11 +66,16 @@ app.whenReady().then(() => {
     createTray(mainWindow)
   }
 
+  startSync()
+
   // Re-export updateTray for use from IPC
   const { ipcMain } = require('electron')
   ipcMain.on('tray:update', () => {
     if (mainWindow) updateTray(mainWindow)
   })
+
+  // Start cloud sync (no-op if not configured)
+  startSync()
 })
 
 app.on('window-all-closed', () => {

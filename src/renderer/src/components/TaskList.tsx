@@ -15,7 +15,7 @@ import {
 } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { TaskItem } from './TaskItem'
-import type { Task } from '../../../shared/types'
+import type { Task } from '@willdo/shared'
 
 interface TaskListProps {
   tasks: Task[]

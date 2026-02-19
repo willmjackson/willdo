@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { formatRelativeDate, isOverdue, isToday } from '../lib/dates'
+import { formatRelativeDate, isOverdue, isToday } from '@willdo/shared'
 import { RecurrenceTag } from './RecurrenceTag'
-import type { Task } from '../../../shared/types'
+import type { Task } from '@willdo/shared'
 
 interface TaskItemProps {
   task: Task

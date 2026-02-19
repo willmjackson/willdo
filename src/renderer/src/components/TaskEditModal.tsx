@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { extractRecurrence } from '../lib/recurrence'
-import { formatRelativeDate } from '../lib/dates'
+import { extractRecurrence, formatRelativeDate } from '@willdo/shared'
 import type { Task, UpdateTaskInput } from '../../../shared/types'
 
 interface TaskEditModalProps {

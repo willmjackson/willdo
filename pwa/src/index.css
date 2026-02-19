@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* WillDo PWA Theme — Golden Hour (adapted for mobile) */
+
+@theme {
+  --color-bg: #faf7f2;
+  --color-bg-hover: #f3ede4;
+  --color-bg-input: #fffefa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-sunken: #f0ead9;
+
+  --color-border: #e6dfd2;
+  --color-border-focus: #d4874d;
+  --color-border-subtle: #ece6da;
+
+  --color-text: #2c2418;
+  --color-text-secondary: #7a6e5d;
+  --color-text-muted: #b0a694;
+  --color-text-inverse: #fffdf8;
+
+  --color-accent: #d4874d;
+  --color-accent-hover: #c47538;
+  --color-accent-subtle: #fdf0e4;
+
+  --color-danger: #c9503c;
+  --color-danger-subtle: #fef0ed;
+  --color-success: #3a9a5b;
+  --color-success-subtle: #edf8f0;
+
+  --color-overdue: #fef0ed;
+  --color-overdue-text: #c9503c;
+  --color-today: #edf8f0;
+  --color-today-text: #2d7d46;
+  --color-recurring: #f0ecfb;
+  --color-recurring-text: #7c5cbf;
+
+  --color-rec-daily: #fef3e2;
+  --color-rec-daily-text: #b8732a;
+  --color-rec-weekly: #f0ecfb;
+  --color-rec-weekly-text: #7c5cbf;
+  --color-rec-monthly: #e8f4fd;
+  --color-rec-monthly-text: #2e7bb5;
+  --color-rec-quarterly: #edf8f0;
+  --color-rec-quarterly-text: #2d7d46;
+  --color-rec-yearly: #fdf0ed;
+  --color-rec-yearly-text: #b8453a;
+
+  --color-overlay: rgba(44, 36, 24, 0.45);
+
+  --shadow-sm: 0 1px 2px rgba(44, 36, 24, 0.06);
+  --shadow-md: 0 4px 12px rgba(44, 36, 24, 0.08);
+  --shadow-lg: 0 8px 30px rgba(44, 36, 24, 0.12);
+  --shadow-input-focus: 0 0 0 3px rgba(212, 135, 77, 0.15);
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+  /* Safe area padding for iPhone notch */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(212, 135, 77, 0.06), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(156, 130, 212, 0.04), transparent);
+}
+
+input:focus {
+  box-shadow: var(--shadow-input-focus);
+}
+
+::selection {
+  background: rgba(212, 135, 77, 0.2);
+  color: var(--color-text);
+}
+
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: slide-in 0.2s var(--ease-smooth) both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s var(--ease-smooth) both;
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spinner 1s linear infinite;
+}

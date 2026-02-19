@@ -1,0 +1,22 @@
+{
+  "name": "WillDo",
+  "short_name": "WillDo",
+  "description": "Quick task capture with natural language",
+  "start_url": "/willdo/",
+  "scope": "/willdo/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#d4874d",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

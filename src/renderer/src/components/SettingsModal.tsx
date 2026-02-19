@@ -24,11 +24,19 @@ interface SettingsModalProps {
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
   const [terminalApp, setTerminalApp] = useState(TERMINAL_OPTIONS[0].value)
+  const [syncUrl, setSyncUrl] = useState('')
+  const [syncKey, setSyncKey] = useState('')
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    window.api.getSetting('terminal_app').then((val) => {
-      if (val) setTerminalApp(val)
+    Promise.all([
+      window.api.getSetting('terminal_app'),
+      window.api.getSetting('sync_api_url'),
+      window.api.getSetting('sync_api_key'),
+    ]).then(([terminal, url, key]) => {
+      if (terminal) setTerminalApp(terminal)
+      if (url) setSyncUrl(url)
+      if (key) setSyncKey(key)
       setLoaded(true)
     })
   }, [])
@@ -96,6 +104,80 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* Cloud Sync */}
+        <div className="px-4 py-3 border-t border-border-subtle">
+          <div className="text-xs text-text-muted font-medium uppercase tracking-wide mb-2">Cloud Sync</div>
+          <div className="text-xs text-text-secondary mb-3">
+            Connect to a Cloudflare Worker for mobile sync
+          </div>
+          <div className="flex flex-col gap-2">
+            <input
+              type="url"
+              value={syncUrl}
+              onChange={(e) => {
+                setSyncUrl(e.target.value)
+                window.api.setSetting('sync_api_url', e.target.value)
+              }}
+              placeholder="Worker URL (e.g. https://willdo-sync.you.workers.dev)"
+              className="w-full px-2.5 py-2 bg-bg-input border border-border rounded-lg text-xs
+                         placeholder:text-text-muted
+                         focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
+                         transition-colors"
+            />
+            <input
+              type="password"
+              value={syncKey}
+              onChange={(e) => {
+                setSyncKey(e.target.value)
+                window.api.setSetting('sync_api_key', e.target.value)
+              }}
+              placeholder="API Key"
+              className="w-full px-2.5 py-2 bg-bg-input border border-border rounded-lg text-xs
+                         placeholder:text-text-muted
+                         focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
+                         transition-colors"
+            />
+          </div>
+        </div>
+
+        <div className="border-t border-border-subtle" />
+
+        {/* Sync settings */}
+        <div className="px-4 py-3">
+          <div className="text-xs text-text-muted font-medium uppercase tracking-wide mb-2">Cloud Sync</div>
+          <div className="text-xs text-text-secondary mb-3">
+            Connect to a Cloudflare Worker for mobile sync
+          </div>
+          <div className="flex flex-col gap-2">
+            <input
+              type="url"
+              value={syncUrl}
+              onChange={e => {
+                setSyncUrl(e.target.value)
+                window.api.setSetting('sync_api_url', e.target.value)
+              }}
+              placeholder="Worker URL (e.g. https://willdo-sync.you.workers.dev)"
+              className="w-full px-2.5 py-1.5 text-sm bg-bg-input border border-border rounded-md
+                         placeholder:text-text-muted
+                         focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
+                         transition-colors"
+            />
+            <input
+              type="password"
+              value={syncKey}
+              onChange={e => {
+                setSyncKey(e.target.value)
+                window.api.setSetting('sync_api_key', e.target.value)
+              }}
+              placeholder="API Key"
+              className="w-full px-2.5 py-1.5 text-sm bg-bg-input border border-border rounded-md
+                         placeholder:text-text-muted
+                         focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
+                         transition-colors"
+            />
           </div>
         </div>
 

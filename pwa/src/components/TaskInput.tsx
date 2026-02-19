@@ -1,10 +1,10 @@
-import React, { useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { formatRelativeDate } from '@willdo/shared'
 import type { CreateTaskInput } from '@willdo/shared'
 
 interface TaskInputProps {
-  onAdd: (input: CreateTaskInput) => Promise<void>
+  onAdd: (input: CreateTaskInput & { is_recurring: boolean }) => Promise<void>
 }
 
 export function TaskInput({ onAdd }: TaskInputProps) {
@@ -12,14 +12,7 @@ export function TaskInput({ onAdd }: TaskInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (e.metaKey && e.key === 'n') {
-        e.preventDefault()
-        inputRef.current?.focus()
-      }
-    }
-    window.addEventListener('keydown', handleKeydown)
-    return () => window.removeEventListener('keydown', handleKeydown)
+    inputRef.current?.focus()
   }, [])
 
   const handleSubmit = async () => {
@@ -29,19 +22,16 @@ export function TaskInput({ onAdd }: TaskInputProps) {
       due_date: parsed.due_date,
       rrule: parsed.rrule,
       rrule_human: parsed.rrule_human,
-      is_recurring: parsed.is_recurring
+      is_recurring: parsed.is_recurring,
     })
     reset()
+    inputRef.current?.focus()
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
-    }
-    if (e.key === 'Escape') {
-      reset()
-      inputRef.current?.blur()
     }
   }
 
@@ -53,14 +43,15 @@ export function TaskInput({ onAdd }: TaskInputProps) {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder='Add a task... (try "Buy milk tomorrow every week")'
-        className="w-full px-3 py-2.5 bg-bg-input border border-border rounded-lg text-sm
+        placeholder='Add a task... (try "Buy milk tomorrow")'
+        enterKeyHint="done"
+        autoCapitalize="sentences"
+        className="w-full px-3 py-2.5 bg-bg-input border border-border rounded-lg text-base
                    placeholder:text-text-muted
                    focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
                    transition-colors"
       />
 
-      {/* Live parse preview + Add button row */}
       {hasContent && (
         <div className="mt-2 flex items-center justify-between gap-2 animate-in">
           <div className="flex items-center gap-2 text-xs min-w-0">
@@ -84,8 +75,8 @@ export function TaskInput({ onAdd }: TaskInputProps) {
           </div>
           <button
             onClick={handleSubmit}
-            className="shrink-0 text-xs font-semibold px-3 py-1 rounded-md
-                       bg-accent text-text-inverse hover:bg-accent-hover
+            className="shrink-0 text-sm font-semibold px-4 py-1.5 rounded-lg
+                       bg-accent text-text-inverse active:bg-accent-hover
                        transition-colors"
           >
             Add

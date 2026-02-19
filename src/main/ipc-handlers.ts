@@ -3,6 +3,7 @@ import { spawn } from 'child_process'
 import { writeFileSync, chmodSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
+import { pushTasks } from './sync'
 import {
   listTasks,
   createTask,
@@ -19,6 +20,7 @@ import {
   getCompletionStats
 } from './db'
 import { pickAndImportCSV } from './todoist-import'
+import { pushTasks } from './sync'
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../shared/types'
 
 function buildClaudePrompt(task: Task): string {
@@ -72,28 +74,33 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('tasks:create', (_event, input: CreateTaskInput) => {
     const task = createTask(input)
     updateDockBadge()
+    pushTasks().catch(console.error)
     return task
   })
 
   ipcMain.handle('tasks:update', (_event, input: UpdateTaskInput) => {
     const task = updateTask(input)
     updateDockBadge()
+    pushTasks().catch(console.error)
     return task
   })
 
   ipcMain.handle('tasks:complete', (_event, id: string) => {
     const task = completeTask(id)
     updateDockBadge()
+    pushTasks().catch(console.error)
     return task
   })
 
   ipcMain.handle('tasks:delete', (_event, id: string) => {
     deleteTask(id)
     updateDockBadge()
+    pushTasks().catch(console.error)
   })
 
   ipcMain.handle('tasks:reorder', (_event, id: string, newOrder: number) => {
-    return reorderTask(id, newOrder)
+    reorderTask(id, newOrder)
+    pushTasks().catch(console.error)
   })
 
   ipcMain.handle('tasks:search', (_event, query: string) => {

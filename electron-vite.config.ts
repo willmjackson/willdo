@@ -9,6 +9,9 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    resolve: {
+      conditions: ['import', 'module', 'browser', 'default']
+    },
     plugins: [react({ jsxRuntime: 'automatic' })]
   }
 })
