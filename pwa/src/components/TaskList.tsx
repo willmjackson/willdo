@@ -12,7 +12,6 @@ interface TaskGroup {
 }
 
 function groupTasks(tasks: SyncTask[]): TaskGroup[] {
-  const today = todayISO()
   const noDate: SyncTask[] = []
   const overdue: SyncTask[] = []
   const todayTasks: SyncTask[] = []
