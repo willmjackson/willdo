@@ -159,7 +159,7 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
   return (
     <div className="fixed inset-0 z-40 bg-overlay flex items-start justify-center pt-16" onClick={onClose}>
       <div
-        className="bg-bg-elevated rounded-xl shadow-lg w-[420px] max-h-[80vh] overflow-hidden animate-in"
+        className="bg-bg-elevated rounded-xl shadow-lg w-[420px] max-h-[90vh] overflow-y-auto animate-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
