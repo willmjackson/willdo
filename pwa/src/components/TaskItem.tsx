@@ -1,4 +1,4 @@
-import { formatRelativeDate, isOverdue, isToday } from '@willdo/shared'
+import { formatRelativeDate, formatTime, isOverdue, isToday } from '@willdo/shared'
 import type { SyncTask } from '../lib/api'
 
 interface TaskItemProps {
@@ -47,7 +47,7 @@ export function TaskItem({ task }: TaskItemProps) {
           <div className="flex items-center gap-1.5 mt-0.5">
             {task.due_date && (
               <span className={`text-[11px] px-1.5 py-0.5 rounded-md ${dateBadgeClass}`}>
-                {formatRelativeDate(task.due_date)}
+                {formatRelativeDate(task.due_date)}{task.due_time ? ` ${formatTime(task.due_time)}` : ''}
               </span>
             )}
             {task.rrule_human && (

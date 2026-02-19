@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { extractRecurrence, formatRelativeDate } from '@willdo/shared'
+import { extractRecurrence, formatRelativeDate, formatTime } from '@willdo/shared'
 import type { Task, UpdateTaskInput } from '../../../shared/types'
 
 interface TaskEditModalProps {
@@ -46,6 +46,7 @@ function buildRecurrencePresets(dueDate: string): { label: string; detail: strin
 export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModalProps) {
   const [title, setTitle] = useState(task.title)
   const [dueDate, setDueDate] = useState(task.due_date || '')
+  const [dueTime, setDueTime] = useState(task.due_time || '')
   const [recurrenceText, setRecurrenceText] = useState(task.rrule_human || '')
   const [showRecurrencePicker, setShowRecurrencePicker] = useState(false)
   const [customRecurrence, setCustomRecurrence] = useState(false)
@@ -136,6 +137,7 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
         id: task.id,
         title: title.trim() || task.title,
         due_date: dueDate || null,
+        due_time: dueTime || null,
         rrule: rec.result?.rrule ?? null,
         rrule_human: rec.result?.rrule_human ?? null,
         is_recurring: rec.result !== null,
@@ -197,7 +199,7 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-accent">
                 <path d="M4.5 1a.5.5 0 0 1 .5.5V2h6v-.5a.5.5 0 0 1 1 0V2h1.5A1.5 1.5 0 0 1 15 3.5v10a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 13.5v-10A1.5 1.5 0 0 1 2.5 2H4v-.5a.5.5 0 0 1 .5-.5zM14 5.5H2v8a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-8z" />
               </svg>
-              <span className="text-text font-medium">{formatRelativeDate(dueDate)}</span>
+              <span className="text-text font-medium">{formatRelativeDate(dueDate)}{dueTime ? ` ${formatTime(dueTime)}` : ''}</span>
               <span className="text-text-muted">({dueDate})</span>
             </div>
           )}
@@ -270,6 +272,25 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
                 )
               })}
             </div>
+          </div>
+
+          {/* Time */}
+          <div className="flex items-center gap-2 mt-3">
+            <input
+              type="time"
+              value={dueTime}
+              onChange={e => setDueTime(e.target.value)}
+              className="text-sm px-2 py-1 rounded-md border border-border bg-bg-input
+                         outline-none focus:border-border-focus text-text"
+            />
+            {dueTime && (
+              <button
+                onClick={() => setDueTime('')}
+                className="text-xs text-text-muted hover:text-danger transition-colors"
+              >
+                Clear time
+              </button>
+            )}
           </div>
         </div>
 

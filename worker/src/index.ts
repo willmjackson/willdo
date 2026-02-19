@@ -8,6 +8,7 @@ interface TaskRow {
   id: string
   title: string
   due_date: string | null
+  due_time: string | null
   rrule: string | null
   rrule_human: string | null
   is_recurring: number
@@ -74,6 +75,7 @@ export default {
           id: string
           title: string
           due_date?: string | null
+          due_time?: string | null
           rrule?: string | null
           rrule_human?: string | null
           is_recurring?: boolean
@@ -82,12 +84,13 @@ export default {
 
         const now = new Date().toISOString()
         await env.DB.prepare(
-          `INSERT INTO tasks (id, title, due_date, rrule, rrule_human, is_recurring, sort_order, created_at, updated_at, source, synced)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'mobile', 0)`
+          `INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order, created_at, updated_at, source, synced)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mobile', 0)`
         ).bind(
           body.id,
           body.title,
           body.due_date ?? null,
+          body.due_time ?? null,
           body.rrule ?? null,
           body.rrule_human ?? null,
           body.is_recurring ? 1 : 0,
@@ -116,11 +119,11 @@ export default {
         // Insert desktop tasks
         if (body.tasks.length > 0) {
           const stmt = env.DB.prepare(
-            `INSERT OR REPLACE INTO tasks (id, title, due_date, rrule, rrule_human, is_recurring, is_completed, sort_order, created_at, updated_at, source, synced)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop', 1)`
+            `INSERT OR REPLACE INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, is_completed, sort_order, created_at, updated_at, source, synced)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop', 1)`
           )
           const batch = body.tasks.map(t =>
-            stmt.bind(t.id, t.title, t.due_date, t.rrule, t.rrule_human, t.is_recurring, t.is_completed, t.sort_order, t.created_at, t.updated_at)
+            stmt.bind(t.id, t.title, t.due_date, t.due_time ?? null, t.rrule, t.rrule_human, t.is_recurring, t.is_completed, t.sort_order, t.created_at, t.updated_at)
           )
           await env.DB.batch(batch)
         }

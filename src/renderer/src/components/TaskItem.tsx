@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { formatRelativeDate, isOverdue, isToday } from '@willdo/shared'
+import { formatRelativeDate, formatTime, isOverdue, isToday } from '@willdo/shared'
 import { RecurrenceTag } from './RecurrenceTag'
 import type { Task } from '@willdo/shared'
 
@@ -93,7 +93,7 @@ export function TaskItem({ task, onComplete, onDelete, onEdit, onLaunchClaude }:
               today ? 'text-today-text bg-today font-medium' :
               'text-text-secondary'
             }`}>
-              {formatRelativeDate(task.due_date)}
+              {formatRelativeDate(task.due_date)}{task.due_time ? ` ${formatTime(task.due_time)}` : ''}
             </span>
           )}
           {task.is_recurring === 1 && task.rrule_human && (

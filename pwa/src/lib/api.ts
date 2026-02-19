@@ -2,6 +2,7 @@ export interface SyncTask {
   id: string
   title: string
   due_date: string | null
+  due_time: string | null
   rrule: string | null
   rrule_human: string | null
   is_recurring: number
@@ -62,6 +63,7 @@ export async function createTask(task: {
   id: string
   title: string
   due_date: string | null
+  due_time: string | null
   rrule: string | null
   rrule_human: string | null
   is_recurring: boolean

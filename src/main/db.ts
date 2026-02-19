@@ -48,6 +48,7 @@ function migrate(): void {
   // Idempotent column additions
   try { db.exec('ALTER TABLE tasks ADD COLUMN claude_launched_at TEXT') } catch { /* already exists */ }
   try { db.exec('ALTER TABLE completions ADD COLUMN launched_with_claude INTEGER DEFAULT 0') } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE tasks ADD COLUMN due_time TEXT') } catch { /* already exists */ }
 }
 
 /**
@@ -120,12 +121,13 @@ export function createTask(input: CreateTaskInput): Task {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO tasks (title, due_date, rrule, rrule_human, is_recurring, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO tasks (title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
   const result = stmt.run(
     input.title,
     dueDate,
+    input.due_time ?? null,
     input.rrule ?? null,
     input.rrule_human ?? null,
     input.is_recurring ? 1 : 0,
@@ -145,6 +147,10 @@ export function updateTask(input: UpdateTaskInput): Task {
   if (input.due_date !== undefined) {
     sets.push('due_date = ?')
     values.push(input.due_date)
+  }
+  if (input.due_time !== undefined) {
+    sets.push('due_time = ?')
+    values.push(input.due_time)
   }
   if (input.rrule !== undefined) {
     sets.push('rrule = ?')
@@ -194,7 +200,7 @@ export function completeTask(id: string): Task {
     const nextDate = computeNextOccurrence(task.rrule, currentDue, currentDue)
 
     if (nextDate) {
-      // Reset claude_launched_at so recurring tasks start fresh each cycle
+      // Reset claude_launched_at so recurring tasks start fresh each cycle; preserve due_time
       db.prepare("UPDATE tasks SET due_date = ?, claude_launched_at = NULL, updated_at = datetime('now') WHERE id = ?").run(nextDate, id)
     } else {
       db.prepare("UPDATE tasks SET is_completed = 1, claude_launched_at = NULL, updated_at = datetime('now') WHERE id = ?").run(id)

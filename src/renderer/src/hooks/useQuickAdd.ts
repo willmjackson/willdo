@@ -10,7 +10,7 @@ export function useQuickAdd() {
   }, [input])
 
   const hasContent = input.trim().length > 0
-  const hasExtras = parsed.due_date !== null || parsed.is_recurring
+  const hasExtras = parsed.due_date !== null || parsed.due_time !== null || parsed.is_recurring
 
   const reset = () => setInput('')
 

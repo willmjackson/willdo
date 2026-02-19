@@ -2,6 +2,7 @@ export interface Task {
   id: string
   title: string
   due_date: string | null
+  due_time: string | null
   rrule: string | null
   rrule_human: string | null
   is_recurring: number
@@ -16,6 +17,7 @@ export interface Task {
 export interface CreateTaskInput {
   title: string
   due_date?: string | null
+  due_time?: string | null
   rrule?: string | null
   rrule_human?: string | null
   is_recurring?: boolean
@@ -25,6 +27,7 @@ export interface UpdateTaskInput {
   id: string
   title?: string
   due_date?: string | null
+  due_time?: string | null
   rrule?: string | null
   rrule_human?: string | null
   is_recurring?: boolean
@@ -72,6 +75,7 @@ export interface CompletedTaskRow {
   title: string
   completed_at: string
   due_date: string | null
+  due_time: string | null
   launched_with_claude: number
   is_recurring: number
   rrule_human: string | null

@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useQuickAdd } from '../hooks/useQuickAdd'
-import { formatRelativeDate } from '@willdo/shared'
+import { formatRelativeDate, formatTime } from '@willdo/shared'
 import type { CreateTaskInput } from '@willdo/shared'
 
 interface TaskInputProps {
@@ -20,6 +20,7 @@ export function TaskInput({ onAdd }: TaskInputProps) {
     await onAdd({
       title: parsed.title,
       due_date: parsed.due_date,
+      due_time: parsed.due_time,
       rrule: parsed.rrule,
       rrule_human: parsed.rrule_human,
       is_recurring: parsed.is_recurring,
@@ -62,7 +63,7 @@ export function TaskInput({ onAdd }: TaskInputProps) {
                 )}
                 {parsed.due_date && (
                   <span className="shrink-0 bg-bg-hover rounded-md px-1.5 py-0.5 text-text-secondary">
-                    {formatRelativeDate(parsed.due_date)}
+                    {formatRelativeDate(parsed.due_date)}{parsed.due_time ? ` ${formatTime(parsed.due_time)}` : ''}
                   </span>
                 )}
                 {parsed.rrule_human && (

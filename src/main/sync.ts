@@ -56,6 +56,7 @@ export async function pullMobileTasks(): Promise<number> {
     id: string
     title: string
     due_date: string | null
+    due_time: string | null
     rrule: string | null
     rrule_human: string | null
     is_recurring: number
@@ -71,6 +72,7 @@ export async function pullMobileTasks(): Promise<number> {
       createTask({
         title: task.title,
         due_date: task.due_date,
+        due_time: task.due_time,
         rrule: task.rrule,
         rrule_human: task.rrule_human,
         is_recurring: !!task.is_recurring,

@@ -22,7 +22,7 @@ function computeNextFromRRule(rruleStr: string): string | null {
 
 export function parseTaskInput(input: string): ParsedTask {
   if (!input.trim()) {
-    return { title: '', due_date: null, rrule: null, rrule_human: null, is_recurring: false }
+    return { title: '', due_date: null, due_time: null, rrule: null, rrule_human: null, is_recurring: false }
   }
 
   // Stage 1: Extract recurrence pattern
@@ -31,6 +31,7 @@ export function parseTaskInput(input: string): ParsedTask {
   // Stage 2: Extract date with chrono-node
   const parsed = chrono.parse(afterRecurrence, new Date(), { forwardDate: true })
   let dueDate: string | null = null
+  let dueTime: string | null = null
   let afterDate = afterRecurrence
 
   if (parsed.length > 0) {
@@ -38,12 +39,25 @@ export function parseTaskInput(input: string): ParsedTask {
     const date = match.start.date()
     dueDate = date.toISOString().split('T')[0]
 
+    // Extract time if chrono is certain about the hour
+    if (match.start.isCertain('hour')) {
+      let hours = date.getHours()
+      const minutes = date.getMinutes()
+
+      // PM defaults: if meridiem is ambiguous and hour is 1-7 or 12, assume PM
+      if (!match.start.isCertain('meridiem') && ((hours >= 1 && hours <= 7) || hours === 12)) {
+        if (hours !== 12) hours += 12
+      }
+
+      dueTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+    }
+
     // Remove the date text and surrounding prepositions
     const before = afterDate.slice(0, match.index)
     const after = afterDate.slice(match.index + match.text.length)
 
-    // Clean up prepositions that preceded the date (by, on, due, for)
-    const cleanBefore = before.replace(/\s+(?:by|on|due|for)\s*$/i, ' ')
+    // Clean up prepositions that preceded the date (by, on, due, for, at)
+    const cleanBefore = before.replace(/\s+(?:by|on|due|for|at)\s*$/i, ' ')
     afterDate = (cleanBefore + after).replace(/\s{2,}/g, ' ').trim()
   }
 
@@ -58,6 +72,7 @@ export function parseTaskInput(input: string): ParsedTask {
   return {
     title,
     due_date: dueDate,
+    due_time: dueTime,
     rrule: recurrence?.rrule ?? null,
     rrule_human: recurrence?.rrule_human ?? null,
     is_recurring: recurrence !== null

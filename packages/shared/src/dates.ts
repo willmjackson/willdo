@@ -55,3 +55,10 @@ function daysBetween(a: string, b: string): number {
 export function todayISO(): string {
   return new Date().toISOString().split('T')[0]
 }
+
+export function formatTime(timeStr: string): string {
+  const [h, m] = timeStr.split(':').map(Number)
+  const suffix = h >= 12 ? 'PM' : 'AM'
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return m === 0 ? `${hour12} ${suffix}` : `${hour12}:${String(m).padStart(2, '0')} ${suffix}`
+}

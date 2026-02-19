@@ -25,6 +25,7 @@ export function useTasks() {
   const addTask = useCallback(async (input: {
     title: string
     due_date: string | null
+    due_time: string | null
     rrule: string | null
     rrule_human: string | null
     is_recurring: boolean
@@ -39,6 +40,7 @@ export function useTasks() {
       id,
       title: input.title,
       due_date: input.due_date,
+      due_time: input.due_time,
       rrule: input.rrule,
       rrule_human: input.rrule_human,
       is_recurring: input.is_recurring,
