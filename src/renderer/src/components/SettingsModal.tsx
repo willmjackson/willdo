@@ -59,7 +59,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   return (
     <div className="fixed inset-0 z-40 bg-overlay flex items-start justify-center pt-16" onClick={onClose}>
       <div
-        className="bg-bg-elevated rounded-xl shadow-lg w-[360px] overflow-hidden animate-in"
+        className="bg-bg-elevated rounded-xl shadow-lg w-[360px] max-h-[80vh] overflow-y-auto animate-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -136,44 +136,6 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
               }}
               placeholder="API Key"
               className="w-full px-2.5 py-2 bg-bg-input border border-border rounded-lg text-xs
-                         placeholder:text-text-muted
-                         focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
-                         transition-colors"
-            />
-          </div>
-        </div>
-
-        <div className="border-t border-border-subtle" />
-
-        {/* Sync settings */}
-        <div className="px-4 py-3">
-          <div className="text-xs text-text-muted font-medium uppercase tracking-wide mb-2">Cloud Sync</div>
-          <div className="text-xs text-text-secondary mb-3">
-            Connect to a Cloudflare Worker for mobile sync
-          </div>
-          <div className="flex flex-col gap-2">
-            <input
-              type="url"
-              value={syncUrl}
-              onChange={e => {
-                setSyncUrl(e.target.value)
-                window.api.setSetting('sync_api_url', e.target.value)
-              }}
-              placeholder="Worker URL (e.g. https://willdo-sync.you.workers.dev)"
-              className="w-full px-2.5 py-1.5 text-sm bg-bg-input border border-border rounded-md
-                         placeholder:text-text-muted
-                         focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
-                         transition-colors"
-            />
-            <input
-              type="password"
-              value={syncKey}
-              onChange={e => {
-                setSyncKey(e.target.value)
-                window.api.setSetting('sync_api_key', e.target.value)
-              }}
-              placeholder="API Key"
-              className="w-full px-2.5 py-1.5 text-sm bg-bg-input border border-border rounded-md
                          placeholder:text-text-muted
                          focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-border-focus
                          transition-colors"
