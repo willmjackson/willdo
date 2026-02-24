@@ -61,9 +61,12 @@ export function parseTaskInput(input: string): ParsedTask {
     afterDate = (cleanBefore + after).replace(/\s{2,}/g, ' ').trim()
   }
 
-  // Stage 2b: If recurring but no explicit date, compute first occurrence from rrule
-  if (recurrence && !dueDate) {
-    dueDate = computeNextFromRRule(recurrence.rrule)
+  // Stage 2b: For recurring tasks, compute first occurrence from rrule when
+  // chrono only parsed a time (not a specific day). e.g. "every friday at 3pm"
+  // → chrono sees "at 3pm" and guesses today/tomorrow, but the rrule knows it's Friday.
+  if (recurrence && (!dueDate || (parsed.length > 0 && !parsed[0].start.isCertain('weekday') && !parsed[0].start.isCertain('day')))) {
+    const rruleDate = computeNextFromRRule(recurrence.rrule)
+    if (rruleDate) dueDate = rruleDate
   }
 
   // Stage 3: Clean up the title
