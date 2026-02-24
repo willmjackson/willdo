@@ -23,7 +23,7 @@ interface TaskRow {
 function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
   }
 }
@@ -105,6 +105,34 @@ export default {
           'SELECT * FROM tasks WHERE is_completed = 0 ORDER BY due_date IS NULL, due_date ASC, sort_order ASC'
         ).all<TaskRow>()
         return json(tasks.results, 201, origin)
+      }
+
+      // PATCH /tasks/:id/complete — mark task completed from mobile
+      const completeMatch = path.match(/^\/tasks\/([^/]+)\/complete$/)
+      if (request.method === 'PATCH' && completeMatch) {
+        const taskId = completeMatch[1]
+        // Flip to mobile-sourced so desktop pull picks it up
+        await env.DB.prepare(
+          "UPDATE tasks SET is_completed = 1, source = 'mobile', synced = 0, updated_at = ? WHERE id = ?"
+        ).bind(new Date().toISOString(), taskId).run()
+        const tasks = await env.DB.prepare(
+          'SELECT * FROM tasks WHERE is_completed = 0 ORDER BY due_date IS NULL, due_date ASC, sort_order ASC'
+        ).all<TaskRow>()
+        return json(tasks.results, 200, origin)
+      }
+
+      // DELETE /tasks/:id — delete task from mobile
+      const deleteMatch = path.match(/^\/tasks\/([^/]+)$/)
+      if (request.method === 'DELETE' && deleteMatch) {
+        const taskId = deleteMatch[1]
+        // Mark as deleted (is_completed=2) and flip to mobile-sourced for desktop sync
+        await env.DB.prepare(
+          "UPDATE tasks SET is_completed = 2, source = 'mobile', synced = 0, updated_at = ? WHERE id = ?"
+        ).bind(new Date().toISOString(), taskId).run()
+        const tasks = await env.DB.prepare(
+          'SELECT * FROM tasks WHERE is_completed = 0 ORDER BY due_date IS NULL, due_date ASC, sort_order ASC'
+        ).all<TaskRow>()
+        return json(tasks.results, 200, origin)
       }
 
       // POST /sync/push — desktop pushes full task snapshot

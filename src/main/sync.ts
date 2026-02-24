@@ -1,4 +1,4 @@
-import { getSetting, listTasks, createTask } from './db'
+import { getSetting, listTasks, createTask, completeTask, deleteTask } from './db'
 import type { Task } from '../shared/types'
 
 let syncInterval: ReturnType<typeof setInterval> | null = null
@@ -60,26 +60,36 @@ export async function pullMobileTasks(): Promise<number> {
     rrule: string | null
     rrule_human: string | null
     is_recurring: number
+    is_completed: number
     sort_order: number
   }>
 
   if (pending.length === 0) return 0
 
-  // Create each mobile task locally
+  // Process each pending mobile action
   const ackIds: string[] = []
   for (const task of pending) {
     try {
-      createTask({
-        title: task.title,
-        due_date: task.due_date,
-        due_time: task.due_time,
-        rrule: task.rrule,
-        rrule_human: task.rrule_human,
-        is_recurring: !!task.is_recurring,
-      })
+      if (task.is_completed === 2) {
+        // Deletion from mobile — delete the local task
+        deleteTask(task.id)
+      } else if (task.is_completed === 1) {
+        // Completion from mobile — complete the local task
+        completeTask(task.id)
+      } else {
+        // New task from mobile — create locally
+        createTask({
+          title: task.title,
+          due_date: task.due_date,
+          due_time: task.due_time,
+          rrule: task.rrule,
+          rrule_human: task.rrule_human,
+          is_recurring: !!task.is_recurring,
+        })
+      }
       ackIds.push(task.id)
     } catch (err) {
-      console.error(`Failed to import mobile task "${task.title}":`, err)
+      console.error(`Failed to process mobile task "${task.title}":`, err)
     }
   }
 

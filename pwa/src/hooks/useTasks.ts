@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchTasks, createTask as apiCreateTask, type SyncTask } from '../lib/api'
+import { fetchTasks, createTask as apiCreateTask, completeTask as apiCompleteTask, deleteTask as apiDeleteTask, type SyncTask } from '../lib/api'
 
 export function useTasks() {
   const [tasks, setTasks] = useState<SyncTask[]>([])
@@ -55,5 +55,15 @@ export function useTasks() {
     setTasks(allTasks)
   }, [tasks])
 
-  return { tasks, loading, error, refresh, addTask }
+  const completeTask = useCallback(async (id: string) => {
+    const allTasks = await apiCompleteTask(id)
+    setTasks(allTasks)
+  }, [])
+
+  const deleteTask = useCallback(async (id: string) => {
+    const allTasks = await apiDeleteTask(id)
+    setTasks(allTasks)
+  }, [])
+
+  return { tasks, loading, error, refresh, addTask, completeTask, deleteTask }
 }

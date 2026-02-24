@@ -74,3 +74,15 @@ export async function createTask(task: {
     body: JSON.stringify(task),
   })
 }
+
+export async function completeTask(id: string): Promise<SyncTask[]> {
+  return apiFetch<SyncTask[]>(`/tasks/${id}/complete`, {
+    method: 'PATCH',
+  })
+}
+
+export async function deleteTask(id: string): Promise<SyncTask[]> {
+  return apiFetch<SyncTask[]>(`/tasks/${id}`, {
+    method: 'DELETE',
+  })
+}

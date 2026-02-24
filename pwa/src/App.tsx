@@ -16,7 +16,7 @@ export default function App() {
 }
 
 function MainView({ onDisconnect }: { onDisconnect: () => void }) {
-  const { tasks, loading, error, refresh, addTask } = useTasks()
+  const { tasks, loading, error, refresh, addTask, completeTask, deleteTask } = useTasks()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
 
   // Track online status
@@ -76,7 +76,7 @@ function MainView({ onDisconnect }: { onDisconnect: () => void }) {
           </button>
         </div>
       ) : (
-        <TaskList tasks={tasks} />
+        <TaskList tasks={tasks} onComplete={completeTask} onDelete={deleteTask} />
       )}
 
       {/* Footer */}

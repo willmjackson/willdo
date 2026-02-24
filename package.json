@@ -71,6 +71,7 @@
     "electron-vite": "^5.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
@@ -80,11 +81,11 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@willdo/shared": "workspace:*",
     "better-sqlite3": "^12.6.2",
     "chrono-node": "^2.9.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "rrule": "^2.8.1",
-    "@willdo/shared": "workspace:*"
+    "rrule": "^2.8.1"
   }
 }
