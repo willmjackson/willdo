@@ -21,6 +21,9 @@ Always use pnpm.
 - `src/preload/` — contextBridge IPC bridge
 - `src/renderer/src/` — React app (components, hooks, lib)
 - `src/shared/types.ts` — Shared TypeScript types
+- `packages/shared/` — Shared package (parser, recurrence, types) used by Electron app and PWA
+- `pwa/` — Mobile PWA (React, deployed to GitHub Pages)
+- `worker/` — Cloudflare Worker for cloud sync (D1 database)
 - `skill/willdo-todo/SKILL.md` — Claude Code /todo skill
 
 ## Database
@@ -36,6 +39,20 @@ pnpm dev        # Launch dev mode with HMR
 pnpm build      # Production build
 pnpm package    # Package as macOS .dmg
 ```
+
+## Testing
+
+The `packages/shared/` module uses extensionless TypeScript imports (resolved by Vite at build time). To run ad-hoc tests against it, use the workspace-installed `tsx`:
+
+```bash
+./node_modules/.bin/tsx -e "import { parseTaskInput } from './packages/shared/src/parser.ts'; ..."
+```
+
+When making changes to parsing, recurrence, or other shared logic, always verify with a quick tsx script before committing. Test edge cases like:
+- Recurring + time: `"Make pasta every friday at 3pm"`
+- Recurring without time: `"Review every friday"`
+- Non-recurring with date: `"Dentist next tuesday at 2pm"`
+- Daily: `"Gym every day at 6pm"`
 
 ## Key Design Decisions
 
