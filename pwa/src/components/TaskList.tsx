@@ -32,10 +32,10 @@ function groupTasks(tasks: SyncTask[]): TaskGroup[] {
   }
 
   const groups: TaskGroup[] = []
+  if (noDate.length) groups.push({ label: 'No date', tasks: noDate })
   if (overdue.length) groups.push({ label: 'Overdue', tasks: overdue })
   if (todayTasks.length) groups.push({ label: 'Today', tasks: todayTasks })
   if (upcoming.length) groups.push({ label: 'Upcoming', tasks: upcoming })
-  if (noDate.length) groups.push({ label: 'No date', tasks: noDate })
   return groups
 }
 
