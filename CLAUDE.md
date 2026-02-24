@@ -54,6 +54,16 @@ When making changes to parsing, recurrence, or other shared logic, always verify
 - Non-recurring with date: `"Dentist next tuesday at 2pm"`
 - Daily: `"Gym every day at 6pm"`
 
+## Deployment
+
+- **PWA** and **Worker** deploy automatically via GitHub Actions on push to main.
+- **Electron app** runs locally from the packaged build in `/Applications`. Changes to `src/main/`, `src/preload/`, `src/renderer/`, or `src/shared/` require repackaging and reinstalling:
+  ```bash
+  pnpm run package    # Creates dist/WillDo-1.0.0-arm64.dmg
+  open dist/WillDo-1.0.0-arm64.dmg  # Drag to Applications to replace
+  ```
+  Always repackage after modifying Electron code — the running app won't pick up source changes otherwise.
+
 ## Key Design Decisions
 
 - Recurring tasks use single-task model: on completion, log to completions, compute next occurrence via rrule.js, update due_date
