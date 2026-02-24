@@ -92,8 +92,9 @@ export async function pullMobileTasks(): Promise<number> {
           is_recurring: !!task.is_recurring,
         })
       } else {
-        // New task from mobile — create locally
+        // New task from mobile — create locally with same ID
         createTask({
+          id: task.id,
           title: task.title,
           due_date: task.due_date,
           due_time: task.due_time,

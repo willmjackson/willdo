@@ -15,6 +15,7 @@ export interface Task {
 }
 
 export interface CreateTaskInput {
+  id?: string
   title: string
   due_date?: string | null
   due_time?: string | null

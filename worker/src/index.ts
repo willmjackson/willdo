@@ -174,11 +174,25 @@ export default {
         // Also delete mobile rows that have been synced (acked by desktop)
         await env.DB.prepare("DELETE FROM tasks WHERE source = 'mobile' AND synced = 1").run()
 
-        // Insert desktop tasks
+        // Insert desktop tasks, but don't overwrite unsynced mobile edits
         if (body.tasks.length > 0) {
           const stmt = env.DB.prepare(
-            `INSERT OR REPLACE INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, is_completed, sort_order, created_at, updated_at, source, synced)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop', 1)`
+            `INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, is_completed, sort_order, created_at, updated_at, source, synced)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop', 1)
+             ON CONFLICT(id) DO UPDATE SET
+               title = excluded.title,
+               due_date = excluded.due_date,
+               due_time = excluded.due_time,
+               rrule = excluded.rrule,
+               rrule_human = excluded.rrule_human,
+               is_recurring = excluded.is_recurring,
+               is_completed = excluded.is_completed,
+               sort_order = excluded.sort_order,
+               created_at = excluded.created_at,
+               updated_at = excluded.updated_at,
+               source = 'desktop',
+               synced = 1
+             WHERE source != 'mobile' OR synced != 0`
           )
           const batch = body.tasks.map(t =>
             stmt.bind(t.id, t.title, t.due_date, t.due_time ?? null, t.rrule, t.rrule_human, t.is_recurring, t.is_completed, t.sort_order, t.created_at, t.updated_at)

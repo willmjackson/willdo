@@ -120,11 +120,17 @@ export function createTask(input: CreateTaskInput): Task {
     dueDate = computeNextOccurrence(input.rrule)
   }
 
-  const stmt = db.prepare(`
-    INSERT INTO tasks (title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `)
-  const result = stmt.run(
+  const stmt = input.id
+    ? db.prepare(`
+        INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+    : db.prepare(`
+        INSERT INTO tasks (title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `)
+  const params = [
+    ...(input.id ? [input.id] : []),
     input.title,
     dueDate,
     input.due_time ?? null,
@@ -132,7 +138,8 @@ export function createTask(input: CreateTaskInput): Task {
     input.rrule_human ?? null,
     input.is_recurring ? 1 : 0,
     sortOrder
-  )
+  ]
+  const result = stmt.run(...params)
   return db.prepare('SELECT * FROM tasks WHERE rowid = ?').get(result.lastInsertRowid) as Task
 }
 
