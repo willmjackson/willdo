@@ -1,4 +1,4 @@
-import { getSetting, listTasks, createTask, completeTask, deleteTask } from './db'
+import { getSetting, listTasks, createTask, completeTask, deleteTask, updateTask } from './db'
 import type { Task } from '../shared/types'
 
 let syncInterval: ReturnType<typeof setInterval> | null = null
@@ -66,6 +66,10 @@ export async function pullMobileTasks(): Promise<number> {
 
   if (pending.length === 0) return 0
 
+  // Build a set of local task IDs for detecting edits vs new tasks
+  const localTasks = listTasks('inbox') as Task[]
+  const localIds = new Set(localTasks.map(t => t.id))
+
   // Process each pending mobile action
   const ackIds: string[] = []
   for (const task of pending) {
@@ -76,6 +80,17 @@ export async function pullMobileTasks(): Promise<number> {
       } else if (task.is_completed === 1) {
         // Completion from mobile — complete the local task
         completeTask(task.id)
+      } else if (localIds.has(task.id)) {
+        // Edit from mobile — update the existing local task
+        updateTask({
+          id: task.id,
+          title: task.title,
+          due_date: task.due_date,
+          due_time: task.due_time,
+          rrule: task.rrule,
+          rrule_human: task.rrule_human,
+          is_recurring: !!task.is_recurring,
+        })
       } else {
         // New task from mobile — create locally
         createTask({

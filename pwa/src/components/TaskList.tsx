@@ -6,6 +6,7 @@ interface TaskListProps {
   tasks: SyncTask[]
   onComplete: (id: string) => void
   onDelete: (id: string) => void
+  onEdit: (task: SyncTask) => void
 }
 
 interface TaskGroup {
@@ -39,7 +40,7 @@ function groupTasks(tasks: SyncTask[]): TaskGroup[] {
   return groups
 }
 
-export function TaskList({ tasks, onComplete, onDelete }: TaskListProps) {
+export function TaskList({ tasks, onComplete, onDelete, onEdit }: TaskListProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-text-muted text-sm p-8">
@@ -60,7 +61,7 @@ export function TaskList({ tasks, onComplete, onDelete }: TaskListProps) {
             </span>
           </div>
           {group.tasks.map((task) => (
-            <TaskItem key={task.id} task={task} onComplete={onComplete} onDelete={onDelete} />
+            <TaskItem key={task.id} task={task} onComplete={onComplete} onDelete={onDelete} onEdit={onEdit} />
           ))}
         </div>
       ))}

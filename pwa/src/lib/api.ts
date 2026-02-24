@@ -86,3 +86,17 @@ export async function deleteTask(id: string): Promise<SyncTask[]> {
     method: 'DELETE',
   })
 }
+
+export async function updateTask(id: string, fields: {
+  title?: string
+  due_date?: string | null
+  due_time?: string | null
+  rrule?: string | null
+  rrule_human?: string | null
+  is_recurring?: number
+}): Promise<SyncTask[]> {
+  return apiFetch<SyncTask[]>(`/tasks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  })
+}

@@ -121,6 +121,35 @@ export default {
         return json(tasks.results, 200, origin)
       }
 
+      // PATCH /tasks/:id — update task fields from mobile
+      const updateMatch = path.match(/^\/tasks\/([^/]+)$/)
+      if (request.method === 'PATCH' && updateMatch) {
+        const taskId = updateMatch[1]
+        const body = await request.json<{
+          title?: string
+          due_date?: string | null
+          due_time?: string | null
+          rrule?: string | null
+          rrule_human?: string | null
+          is_recurring?: number
+        }>()
+        const sets: string[] = []
+        const vals: unknown[] = []
+        if (body.title !== undefined) { sets.push('title = ?'); vals.push(body.title) }
+        if (body.due_date !== undefined) { sets.push('due_date = ?'); vals.push(body.due_date) }
+        if (body.due_time !== undefined) { sets.push('due_time = ?'); vals.push(body.due_time) }
+        if (body.rrule !== undefined) { sets.push('rrule = ?'); vals.push(body.rrule) }
+        if (body.rrule_human !== undefined) { sets.push('rrule_human = ?'); vals.push(body.rrule_human) }
+        if (body.is_recurring !== undefined) { sets.push('is_recurring = ?'); vals.push(body.is_recurring) }
+        sets.push("source = 'mobile'", 'synced = 0', 'updated_at = ?')
+        vals.push(new Date().toISOString(), taskId)
+        await env.DB.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run()
+        const tasks = await env.DB.prepare(
+          'SELECT * FROM tasks WHERE is_completed = 0 ORDER BY due_date IS NULL, due_date ASC, sort_order ASC'
+        ).all<TaskRow>()
+        return json(tasks.results, 200, origin)
+      }
+
       // DELETE /tasks/:id — delete task from mobile
       const deleteMatch = path.match(/^\/tasks\/([^/]+)$/)
       if (request.method === 'DELETE' && deleteMatch) {

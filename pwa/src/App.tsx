@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { isConfigured, clearConfig } from './lib/api'
+import { isConfigured, clearConfig, type SyncTask } from './lib/api'
 import { useTasks } from './hooks/useTasks'
 import { SetupScreen } from './components/SetupScreen'
 import { TaskInput } from './components/TaskInput'
 import { TaskList } from './components/TaskList'
+import { TaskEditModal } from './components/TaskEditModal'
 
 export default function App() {
   const [configured, setConfigured] = useState(isConfigured())
@@ -16,8 +17,9 @@ export default function App() {
 }
 
 function MainView({ onDisconnect }: { onDisconnect: () => void }) {
-  const { tasks, loading, error, refresh, addTask, completeTask, deleteTask } = useTasks()
+  const { tasks, loading, error, refresh, addTask, completeTask, deleteTask, updateTask } = useTasks()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [editingTask, setEditingTask] = useState<SyncTask | null>(null)
 
   // Track online status
   useEffect(() => {
@@ -76,7 +78,7 @@ function MainView({ onDisconnect }: { onDisconnect: () => void }) {
           </button>
         </div>
       ) : (
-        <TaskList tasks={tasks} onComplete={completeTask} onDelete={deleteTask} />
+        <TaskList tasks={tasks} onComplete={completeTask} onDelete={deleteTask} onEdit={setEditingTask} />
       )}
 
       {/* Footer */}
@@ -89,6 +91,16 @@ function MainView({ onDisconnect }: { onDisconnect: () => void }) {
           Disconnect
         </button>
       </div>
+
+      {/* Edit modal */}
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          onSave={updateTask}
+          onDelete={deleteTask}
+          onClose={() => setEditingTask(null)}
+        />
+      )}
     </div>
   )
 }

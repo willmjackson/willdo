@@ -7,6 +7,7 @@ interface TaskItemProps {
   task: SyncTask
   onComplete: (id: string) => void
   onDelete: (id: string) => void
+  onEdit: (task: SyncTask) => void
 }
 
 const COMPLETE_THRESHOLD = 0.3 // 30% of width
@@ -23,12 +24,13 @@ function getRecurrenceFreq(rrule: string): string {
   return 'weekly'
 }
 
-export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onComplete, onDelete, onEdit }: TaskItemProps) {
   const [offset, setOffset] = useState(0)
   const [dismissed, setDismissed] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const isSwiping = useRef(false)
   const directionLocked = useRef<'horizontal' | 'vertical' | null>(null)
+  const didSwipe = useRef(false)
 
   const width = containerRef.current?.offsetWidth ?? 320
 
@@ -43,6 +45,7 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
       // Only track horizontal swipes
       if (directionLocked.current === 'horizontal') {
         isSwiping.current = true
+        didSwipe.current = true
         setOffset(deltaX)
       }
     },
@@ -77,6 +80,8 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
       }
       isSwiping.current = false
       directionLocked.current = null
+      // Reset didSwipe after a short delay so click handler can check it
+      setTimeout(() => { didSwipe.current = false }, 50)
     },
     trackMouse: false,
     delta: 8,
@@ -137,6 +142,9 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
       {/* Foreground content */}
       <div
         {...handlers}
+        onClick={() => {
+          if (!didSwipe.current && !dismissed) onEdit(task)
+        }}
         className="relative bg-bg border-b border-border-subtle"
         style={{
           transform: `translateX(${offset}px)`,

@@ -114,6 +114,15 @@ input:focus {
   animation: fade-in 0.3s var(--ease-smooth) both;
 }
 
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s var(--ease-smooth) both;
+}
+
 @keyframes spinner {
   to { transform: rotate(360deg); }
 }
