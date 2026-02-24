@@ -28,15 +28,26 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
   const [dismissed, setDismissed] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const isSwiping = useRef(false)
+  const directionLocked = useRef<'horizontal' | 'vertical' | null>(null)
 
   const width = containerRef.current?.offsetWidth ?? 320
 
   const handlers = useSwipeable({
-    onSwiping: ({ deltaX }) => {
-      isSwiping.current = true
-      setOffset(deltaX)
+    onSwiping: ({ deltaX, absX, absY, first }) => {
+      // Lock direction on first significant movement
+      if (first || !directionLocked.current) {
+        if (absX > 8 || absY > 8) {
+          directionLocked.current = absX >= absY ? 'horizontal' : 'vertical'
+        }
+      }
+      // Only track horizontal swipes
+      if (directionLocked.current === 'horizontal') {
+        isSwiping.current = true
+        setOffset(deltaX)
+      }
     },
     onSwipedRight: ({ velocity }) => {
+      if (directionLocked.current !== 'horizontal') return
       if (offset > width * COMPLETE_THRESHOLD || velocity > 0.5) {
         setDismissed(true)
         setOffset(width)
@@ -45,8 +56,10 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
         setOffset(0)
       }
       isSwiping.current = false
+      directionLocked.current = null
     },
     onSwipedLeft: ({ velocity }) => {
+      if (directionLocked.current !== 'horizontal') return
       if (Math.abs(offset) > width * DELETE_THRESHOLD || velocity > 0.5) {
         setDismissed(true)
         setOffset(-width)
@@ -55,15 +68,18 @@ export function TaskItem({ task, onComplete, onDelete }: TaskItemProps) {
         setOffset(0)
       }
       isSwiping.current = false
+      directionLocked.current = null
     },
     onTouchEndOrOnMouseUp: () => {
-      if (isSwiping.current) {
-        isSwiping.current = false
+      // Always snap back if not dismissed
+      if (!dismissed && isSwiping.current) {
+        setOffset(0)
       }
+      isSwiping.current = false
+      directionLocked.current = null
     },
     trackMouse: false,
-    delta: 10,
-    preventScrollOnSwipe: true,
+    delta: 8,
   })
 
   const overdue = isOverdue(task.due_date)
