@@ -20,6 +20,12 @@ export function useTasks() {
 
   useEffect(() => {
     refresh()
+    // Auto-refresh when the app returns to foreground (e.g. switching back to PWA)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [refresh])
 
   const addTask = useCallback(async (input: {

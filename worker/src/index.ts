@@ -33,6 +33,7 @@ function json(data: unknown, status = 200, origin = '*'): Response {
     status,
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
       ...corsHeaders(origin),
     },
   })
