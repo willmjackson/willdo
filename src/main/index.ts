@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell, globalShortcut } from 'electron'
 import path from 'path'
-import { initDb } from './db'
+import fs from 'fs'
+import { initDb, getDbPath } from './db'
 import { registerIpcHandlers } from './ipc-handlers'
 import { createTray, updateTray } from './tray'
 import { startSync, stopSync } from './sync'
@@ -76,6 +77,29 @@ app.whenReady().then(() => {
 
   // Start cloud sync (no-op if not configured)
   startSync()
+
+  // Watch SQLite WAL file for external changes (e.g. /todo skill)
+  // and notify the renderer to refresh immediately
+  const walPath = getDbPath() + '-wal'
+  let dbChangeTimer: ReturnType<typeof setTimeout> | null = null
+  try {
+    fs.watch(walPath, () => {
+      if (dbChangeTimer) clearTimeout(dbChangeTimer)
+      dbChangeTimer = setTimeout(() => {
+        mainWindow?.webContents.send('tasks:changed')
+      }, 300)
+    })
+  } catch {
+    // WAL file may not exist yet; watch the directory instead
+    fs.watch(path.dirname(walPath), (_event, filename) => {
+      if (filename && filename.endsWith('-wal')) {
+        if (dbChangeTimer) clearTimeout(dbChangeTimer)
+        dbChangeTimer = setTimeout(() => {
+          mainWindow?.webContents.send('tasks:changed')
+        }, 300)
+      }
+    })
+  }
 })
 
 app.on('window-all-closed', () => {

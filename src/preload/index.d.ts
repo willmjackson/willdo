@@ -18,6 +18,7 @@ declare global {
       setSetting: (key: string, value: string) => Promise<void>
       listCompletedTasks: (limit?: number) => Promise<CompletedTaskRow[]>
       getCompletionStats: () => Promise<CompletionStats>
+      onTasksChanged: (callback: () => void) => () => void
     }
   }
 }

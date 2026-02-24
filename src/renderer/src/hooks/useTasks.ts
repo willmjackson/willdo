@@ -21,9 +21,14 @@ export function useTasks(view: 'inbox' | 'today') {
 
   useEffect(() => {
     refresh()
-    // Poll every 30s so external changes (e.g. /todo skill) appear
-    const interval = setInterval(refresh, 30_000)
-    return () => clearInterval(interval)
+    // Poll every 60s as a fallback for external changes
+    const interval = setInterval(refresh, 60_000)
+    // Listen for immediate notifications from DB file watcher (e.g. /todo skill)
+    const unsubscribe = api.onTasksChanged(() => refresh())
+    return () => {
+      clearInterval(interval)
+      unsubscribe()
+    }
   }, [refresh])
 
   const addTask = useCallback(async (input: CreateTaskInput) => {

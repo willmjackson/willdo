@@ -46,7 +46,13 @@ const api = {
     ipcRenderer.invoke('history:list', limit),
 
   getCompletionStats: (): Promise<CompletionStats> =>
-    ipcRenderer.invoke('history:stats')
+    ipcRenderer.invoke('history:stats'),
+
+  onTasksChanged: (callback: () => void): (() => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('tasks:changed', listener)
+    return () => ipcRenderer.removeListener('tasks:changed', listener)
+  }
 }
 
 contextBridge.exposeInMainWorld('api', api)
