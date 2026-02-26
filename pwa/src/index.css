@@ -45,6 +45,11 @@
   --color-rec-yearly: #fdf0ed;
   --color-rec-yearly-text: #b8453a;
 
+  --color-review: #fef8e7;
+  --color-review-text: #92660a;
+  --color-review-border: #e9c86e;
+  --color-review-accent: #d49b2a;
+
   --color-overlay: rgba(44, 36, 24, 0.45);
 
   --shadow-sm: 0 1px 2px rgba(44, 36, 24, 0.06);

@@ -17,7 +17,7 @@ export default function App() {
 }
 
 function MainView({ onDisconnect }: { onDisconnect: () => void }) {
-  const { tasks, loading, error, refresh, addTask, completeTask, deleteTask, updateTask } = useTasks()
+  const { tasks, loading, error, refresh, addTask, completeTask, deleteTask, updateTask, acceptReview, dismissReview } = useTasks()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [editingTask, setEditingTask] = useState<SyncTask | null>(null)
 
@@ -78,7 +78,7 @@ function MainView({ onDisconnect }: { onDisconnect: () => void }) {
           </button>
         </div>
       ) : (
-        <TaskList tasks={tasks} onComplete={completeTask} onDelete={deleteTask} onEdit={setEditingTask} />
+        <TaskList tasks={tasks} onComplete={completeTask} onDelete={deleteTask} onEdit={setEditingTask} onAcceptReview={acceptReview} onDismissReview={dismissReview} />
       )}
 
       {/* Footer */}
@@ -99,6 +99,8 @@ function MainView({ onDisconnect }: { onDisconnect: () => void }) {
           onSave={updateTask}
           onDelete={deleteTask}
           onClose={() => setEditingTask(null)}
+          onAcceptReview={async (id) => { await acceptReview(id); setEditingTask(null) }}
+          onDismissReview={async (id) => { await dismissReview(id); setEditingTask(null) }}
         />
       )}
     </div>

@@ -77,5 +77,15 @@ export function useTasks() {
     setTasks(allTasks)
   }, [])
 
-  return { tasks, loading, error, refresh, addTask, completeTask, deleteTask, updateTask }
+  const acceptReview = useCallback(async (id: string) => {
+    const allTasks = await apiUpdateTask(id, { status: 'active' })
+    setTasks(allTasks)
+  }, [])
+
+  const dismissReview = useCallback(async (id: string) => {
+    const allTasks = await apiDeleteTask(id)
+    setTasks(allTasks)
+  }, [])
+
+  return { tasks, loading, error, refresh, addTask, completeTask, deleteTask, updateTask, acceptReview, dismissReview }
 }

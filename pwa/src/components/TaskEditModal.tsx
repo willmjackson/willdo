@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { extractRecurrence, formatRelativeDate, formatTime } from '@willdo/shared'
 import type { SyncTask } from '../lib/api'
 
+interface ReviewContext {
+  meeting_title?: string
+  meeting_date?: string
+  meeting_url?: string
+  participants?: string[]
+  source_text?: string
+}
+
 interface TaskEditModalProps {
   task: SyncTask
   onSave: (id: string, fields: {
@@ -14,6 +22,8 @@ interface TaskEditModalProps {
   }) => Promise<void>
   onDelete: (id: string) => void
   onClose: () => void
+  onAcceptReview?: (id: string) => Promise<void>
+  onDismissReview?: (id: string) => Promise<void>
 }
 
 function buildCalendarDays(year: number, month: number): (number | null)[] {
@@ -50,7 +60,16 @@ function buildRecurrencePresets(dueDate: string): { label: string; detail: strin
   ]
 }
 
-export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModalProps) {
+function parseContext(task: SyncTask): ReviewContext | null {
+  if (!task.context) return null
+  try {
+    return JSON.parse(task.context) as ReviewContext
+  } catch {
+    return null
+  }
+}
+
+export function TaskEditModal({ task, onSave, onDelete, onClose, onAcceptReview, onDismissReview }: TaskEditModalProps) {
   const [title, setTitle] = useState(task.title)
   const [dueDate, setDueDate] = useState(task.due_date || '')
   const [dueTime, setDueTime] = useState(task.due_time || '')
@@ -59,6 +78,9 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
   const [customRecurrence, setCustomRecurrence] = useState(false)
   const [saving, setSaving] = useState(false)
   const titleRef = useRef<HTMLTextAreaElement>(null)
+
+  const isReview = task.status === 'review'
+  const ctx = isReview ? parseContext(task) : null
 
   // Calendar state
   const initialDate = dueDate ? new Date(dueDate + 'T00:00:00') : new Date()
@@ -137,6 +159,39 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
     }
   }
 
+  const handleAcceptReview = async () => {
+    if (!onAcceptReview) return
+    setSaving(true)
+    try {
+      // Save any edits first
+      const titleChanged = title.trim() !== task.title
+      const dateChanged = (dueDate || null) !== task.due_date
+      if (titleChanged || dateChanged) {
+        const rec = recurrenceText.trim() ? extractRecurrence(recurrenceText.trim()) : { result: null, remainder: recurrenceText }
+        await onSave(task.id, {
+          title: title.trim() || task.title,
+          due_date: dueDate || null,
+          due_time: dueTime || null,
+          rrule: rec.result?.rrule ?? null,
+          rrule_human: rec.result?.rrule_human ?? null,
+          is_recurring: rec.result ? 1 : 0,
+        })
+      }
+      await onAcceptReview(task.id)
+      onClose()
+    } catch (e) {
+      console.error('Accept failed:', e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDismissReview = async () => {
+    if (!onDismissReview) return
+    await onDismissReview(task.id)
+    onClose()
+  }
+
   const handleDelete = () => {
     onDelete(task.id)
     onClose()
@@ -160,17 +215,65 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
           <button onClick={onClose} className="text-sm text-text-muted active:text-text">
             Cancel
           </button>
-          <span className="text-sm font-semibold text-text">Edit Task</span>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="text-sm font-semibold text-accent active:text-accent-hover disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
+          <span className={`text-sm font-semibold ${isReview ? 'text-review-text' : 'text-text'}`}>
+            {isReview ? 'Review Task' : 'Edit Task'}
+          </span>
+          {isReview ? (
+            <button
+              onClick={handleAcceptReview}
+              disabled={saving}
+              className="text-sm font-semibold text-review-accent active:opacity-70 disabled:opacity-50"
+            >
+              {saving ? 'Accepting...' : 'Accept'}
+            </button>
+          ) : (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="text-sm font-semibold text-accent active:text-accent-hover disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          )}
         </div>
 
         <div className="border-t border-border-subtle" />
+
+        {/* Meeting context (review tasks only) */}
+        {isReview && ctx && (
+          <div className="mx-4 mt-3 mb-1 rounded-xl bg-review/60 border border-review-border/40 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" className="text-review-accent shrink-0">
+                <path d="M1.5 14.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V4.75a.25.25 0 0 0-.25-.25h-2.5a.75.75 0 0 1 0-1.5h2.5c.966 0 1.75.784 1.75 1.75v9.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25v-9.5C0 3.784.784 3 1.75 3h2.5a.75.75 0 0 1 0 1.5h-2.5a.25.25 0 0 0-.25.25zM8 1a.75.75 0 0 1 .75.75v6.44l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 0 1 1.06-1.06l1.22 1.22V1.75A.75.75 0 0 1 8 1z" />
+              </svg>
+              {ctx.meeting_url ? (
+                <a
+                  href={ctx.meeting_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-review-text active:underline truncate"
+                >
+                  {ctx.meeting_title}
+                </a>
+              ) : (
+                <span className="text-xs font-medium text-review-text truncate">{ctx.meeting_title}</span>
+              )}
+              {ctx.meeting_date && (
+                <span className="text-[10px] text-text-muted shrink-0">{ctx.meeting_date}</span>
+              )}
+            </div>
+            {ctx.participants && ctx.participants.length > 0 && (
+              <div className="text-[10px] text-text-muted mb-1.5">
+                With: {ctx.participants.join(', ')}
+              </div>
+            )}
+            {ctx.source_text && (
+              <div className="text-xs text-text-secondary italic leading-relaxed">
+                &ldquo;{ctx.source_text}&rdquo;
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Title */}
         <div className="px-4 py-3">
@@ -374,14 +477,23 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
 
         <div className="border-t border-border-subtle" />
 
-        {/* Delete */}
+        {/* Bottom action */}
         <div className="px-4 py-3 pb-8">
-          <button
-            onClick={handleDelete}
-            className="w-full text-center text-sm text-danger active:text-danger/80 py-2"
-          >
-            Delete task
-          </button>
+          {isReview ? (
+            <button
+              onClick={handleDismissReview}
+              className="w-full text-center text-sm text-danger active:text-danger/80 py-2"
+            >
+              Dismiss
+            </button>
+          ) : (
+            <button
+              onClick={handleDelete}
+              className="w-full text-center text-sm text-danger active:text-danger/80 py-2"
+            >
+              Delete task
+            </button>
+          )}
         </div>
       </div>
     </div>
