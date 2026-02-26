@@ -4,7 +4,7 @@ import type { Task, ReviewContext } from '@willdo/shared'
 interface ReviewTaskItemProps {
   task: Task
   onAccept: (id: string) => Promise<Task>
-  onDismiss: (id: string) => Promise<void>
+  onDismiss: (id: string, comment?: string) => Promise<void>
   onEdit: (task: Task) => void
 }
 

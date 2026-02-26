@@ -2,7 +2,7 @@
 name: granola
 description: Pull action items from Granola meeting notes and create review tasks in WillDo
 user_invocable: true
-arguments: "[time range]"
+arguments: "time range"
 ---
 
 # Granola Meeting Review
@@ -12,6 +12,11 @@ You are a skill that extracts action items from Granola meeting notes and create
 ## Database
 
 `~/Library/Application Support/willdo/willdo.db` (macOS built-in `sqlite3`, WAL mode)
+
+**Important:** Always use quoted paths in all sqlite3 commands — never backslash-escape the space. Use:
+```bash
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" "..."
+```
 
 ## Invocation
 
@@ -32,7 +37,7 @@ The user runs `/granola [time range]`. Parse their intent:
 Check when the last pull happened:
 
 ```bash
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db \
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" \
   "SELECT value FROM settings WHERE key = 'granola_last_pull';"
 ```
 
@@ -40,26 +45,31 @@ Use the later of the last pull timestamp and the user's requested range. If no a
 
 ### 2. Fetch meetings from Granola
 
-Use the `mcp__granola__query_granola_meetings` tool with a query like:
+First, use `mcp__granola__list_meetings` with the appropriate `time_range` parameter to get meeting IDs and metadata.
 
-> "What are all the action items, follow-ups, todos, and commitments assigned to Will from meetings since {date}? For each item, include which meeting it came from, the meeting date, and the exact text from the notes."
+Then use `mcp__granola__get_meetings` to fetch the full notes for all meetings in the range.
 
-This is preferred over `list_meetings` + `get_meetings` because it returns targeted, structured results in a single call.
+Extract action items directly from the actual meeting notes yourself. **Do not use `query_granola_meetings`** — it can hallucinate action items that don't exist in the notes. By reading the raw notes, you ensure every action item has a real source.
 
-If the query returns no results, try `mcp__granola__list_meetings` with the appropriate `time_range` parameter to check whether meetings exist at all. If they do, use `mcp__granola__get_meetings` on their IDs to get full summaries, then extract action items yourself.
+For each meeting, look for:
+- Explicit action items sections
+- "Will: ..." or "Will to ..." patterns
+- Follow-up commitments Will made
+- Scheduling tasks Will agreed to
 
 ### 3. Read the feedback log
 
 Before creating tasks, read recent review feedback to learn the user's preferences:
 
 ```bash
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db \
-  "SELECT action, original_title, final_title, meeting_title FROM review_feedback ORDER BY created_at DESC LIMIT 30;"
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" \
+  "SELECT action, original_title, final_title, meeting_title, dismiss_comment FROM review_feedback ORDER BY created_at DESC LIMIT 30;"
 ```
 
 Study this feedback to calibrate your extraction:
 
-- **Dismissed items** — learn what to skip. Common patterns: items assigned to other people, vague follow-ups, items the user considers someone else's responsibility.
+- **Dismissed items** — learn what to skip. Check the `dismiss_comment` column for the user's reason (e.g. "assigned to someone else", "already done", "not actionable"). These reasons are the strongest signal for what to exclude in future extractions.
+- **Dismissed without comment** — still useful as a weaker signal. Look for patterns in what gets dismissed silently.
 - **Edited items** — learn the user's preferred title style. Compare `original_title` → `final_title` to see how titles get rewritten (e.g. shorter, more imperative, more specific).
 - **Accepted items** — learn what good extraction looks like. These titles were good as-is.
 
@@ -96,7 +106,7 @@ From the Granola results, identify discrete action items. For each candidate:
 Before inserting each task, check for existing tasks with overlapping content:
 
 ```bash
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db \
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" \
   "SELECT id, title, context FROM tasks WHERE is_completed = 0 AND (title LIKE '%<keyword>%' OR context LIKE '%<meeting_id>%');"
 ```
 
@@ -107,7 +117,7 @@ Use 1-2 distinctive keywords from the task title. Skip insertion if a matching t
 For each action item, insert a task with `status = 'review'` and a JSON `context` blob:
 
 ```bash
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db \
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" \
   "INSERT INTO tasks (id, title, due_date, is_recurring, sort_order, status, context)
    VALUES (
      lower(hex(randomblob(8))),
@@ -139,7 +149,7 @@ The `context` JSON must have this exact shape:
 ### 7. Update last-pull timestamp
 
 ```bash
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db \
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" \
   "INSERT OR REPLACE INTO settings (key, value) VALUES ('granola_last_pull', datetime('now'));"
 ```
 
@@ -166,13 +176,13 @@ Open WillDo to review and accept these tasks.
 Before inserting, verify the required columns and table exist. Run these idempotent statements at the start of every invocation:
 
 ```bash
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db "
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" "
   ALTER TABLE tasks ADD COLUMN status TEXT DEFAULT 'active';
 " 2>/dev/null
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db "
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" "
   ALTER TABLE tasks ADD COLUMN context TEXT;
 " 2>/dev/null
-sqlite3 ~/Library/Application\ Support/willdo/willdo.db "
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" "
   CREATE TABLE IF NOT EXISTS review_feedback (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
     task_id TEXT NOT NULL, action TEXT NOT NULL,
@@ -183,6 +193,12 @@ sqlite3 ~/Library/Application\ Support/willdo/willdo.db "
 "
 ```
 
+```bash
+sqlite3 "$HOME/Library/Application Support/willdo/willdo.db" "
+  ALTER TABLE review_feedback ADD COLUMN dismiss_comment TEXT;
+" 2>/dev/null
+```
+
 These are no-ops if the columns/table already exist.
 
 ## Notes
@@ -190,6 +206,5 @@ These are no-ops if the columns/table already exist.
 - All queries use macOS built-in `sqlite3` — no extra dependencies
 - Task IDs are 16-char hex strings: `lower(hex(randomblob(8)))`
 - `sort_order` is a REAL — use `MAX(sort_order) + 1` for new tasks
-- The Granola MCP tools are available as `mcp__granola__query_granola_meetings`, `mcp__granola__list_meetings`, `mcp__granola__get_meetings`
-- The Granola query tool returns citation links like `[[0]](url)` — extract meeting URLs from these
-- Always preserve Granola citation links in any output shown to the user
+- The Granola MCP tools are available as `mcp__granola__list_meetings`, `mcp__granola__get_meetings`, `mcp__granola__get_meeting_transcript`
+- Do NOT use `query_granola_meetings` — it can hallucinate action items. Always extract from raw meeting notes via `get_meetings`.

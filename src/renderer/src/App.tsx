@@ -70,8 +70,8 @@ export default function App() {
     return updated
   }, [acceptReview, showToast])
 
-  const handleDismissReview = useCallback(async (id: string): Promise<void> => {
-    await dismissReview(id)
+  const handleDismissReview = useCallback(async (id: string, comment?: string): Promise<void> => {
+    await dismissReview(id, comment)
     showToast('Task dismissed')
   }, [dismissReview, showToast])
 
@@ -181,7 +181,7 @@ export default function App() {
           onDelete={async (id) => { await deleteTask(id); setEditingTask(null) }}
           onClose={() => setEditingTask(null)}
           onAcceptReview={async (id) => { await handleAcceptReview(id); setEditingTask(null) }}
-          onDismissReview={async (id) => { await handleDismissReview(id); setEditingTask(null) }}
+          onDismissReview={async (id, comment?) => { await handleDismissReview(id, comment); setEditingTask(null) }}
         />
       )}
 

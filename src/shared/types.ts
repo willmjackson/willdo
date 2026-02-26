@@ -64,6 +64,7 @@ export interface ReviewFeedback {
   final_title: string | null
   meeting_title: string | null
   meeting_id: string | null
+  dismiss_comment: string | null
   created_at: string
 }
 
@@ -134,6 +135,6 @@ export type IpcChannels = {
   'history:list': { args: [limit?: number]; return: CompletedTaskRow[] }
   'history:stats': { args: []; return: CompletionStats }
   'review:accept': { args: [id: string]; return: Task }
-  'review:dismiss': { args: [id: string]; return: void }
+  'review:dismiss': { args: [id: string, comment?: string]; return: void }
   'review:feedback': { args: [limit?: number]; return: ReviewFeedback[] }
 }

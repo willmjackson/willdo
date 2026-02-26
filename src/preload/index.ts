@@ -45,8 +45,8 @@ const api = {
   acceptReview: (id: string): Promise<Task> =>
     ipcRenderer.invoke('review:accept', id),
 
-  dismissReview: (id: string): Promise<void> =>
-    ipcRenderer.invoke('review:dismiss', id),
+  dismissReview: (id: string, comment?: string): Promise<void> =>
+    ipcRenderer.invoke('review:dismiss', id, comment),
 
   listReviewFeedback: (limit?: number): Promise<ReviewFeedback[]> =>
     ipcRenderer.invoke('review:feedback', limit),

@@ -65,6 +65,7 @@ function migrate(): void {
       created_at      TEXT DEFAULT (datetime('now'))
     )
   `)
+  try { db.exec('ALTER TABLE review_feedback ADD COLUMN dismiss_comment TEXT') } catch { /* already exists */ }
 }
 
 /**
@@ -372,15 +373,15 @@ export function acceptReview(id: string): Task {
   return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task
 }
 
-export function dismissReview(id: string): void {
+export function dismissReview(id: string, comment?: string): void {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task | undefined
   if (!task) throw new Error(`Task not found: ${id}`)
 
   const { meeting_title, meeting_id } = extractMeetingFromContext(task)
   db.prepare(`
-    INSERT INTO review_feedback (task_id, action, original_title, meeting_title, meeting_id)
-    VALUES (?, 'dismissed', ?, ?, ?)
-  `).run(id, task.title, meeting_title, meeting_id)
+    INSERT INTO review_feedback (task_id, action, original_title, meeting_title, meeting_id, dismiss_comment)
+    VALUES (?, 'dismissed', ?, ?, ?, ?)
+  `).run(id, task.title, meeting_title, meeting_id, comment ?? null)
 
   db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
 }

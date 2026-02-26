@@ -8,7 +8,7 @@ interface TaskEditModalProps {
   onDelete: (id: string) => Promise<void>
   onClose: () => void
   onAcceptReview?: (id: string) => Promise<Task>
-  onDismissReview?: (id: string) => Promise<void>
+  onDismissReview?: (id: string, comment?: string) => Promise<void>
 }
 
 function parseContext(task: Task): ReviewContext | null {
@@ -62,8 +62,11 @@ export function TaskEditModal({ task, onSave, onDelete, onClose, onAcceptReview,
   const [showRecurrencePicker, setShowRecurrencePicker] = useState(false)
   const [customRecurrence, setCustomRecurrence] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [dismissComment, setDismissComment] = useState('')
+  const [showDismissComment, setShowDismissComment] = useState(false)
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const customRecRef = useRef<HTMLInputElement>(null)
+  const dismissCommentRef = useRef<HTMLInputElement>(null)
 
   const isReview = task.status === 'review'
   const ctx = isReview ? parseContext(task) : null
@@ -193,9 +196,9 @@ export function TaskEditModal({ task, onSave, onDelete, onClose, onAcceptReview,
     }
   }
 
-  const handleDismissReview = async () => {
+  const handleDismissReview = async (comment?: string) => {
     if (!onDismissReview) return
-    await onDismissReview(task.id)
+    await onDismissReview(task.id, comment || undefined)
     onClose()
   }
 
@@ -463,15 +466,49 @@ export function TaskEditModal({ task, onSave, onDelete, onClose, onAcceptReview,
         <div className="border-t border-border-subtle" />
 
         {/* Actions */}
-        <div className="px-4 py-3 flex items-center justify-between">
-          {isReview ? (
-            <>
+        {isReview && showDismissComment && (
+          <div className="px-4 pb-1">
+            <div className="flex items-center gap-2">
+              <input
+                ref={dismissCommentRef}
+                autoFocus
+                value={dismissComment}
+                onChange={e => setDismissComment(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleDismissReview(dismissComment)
+                  if (e.key === 'Escape') { setShowDismissComment(false); setDismissComment('') }
+                }}
+                className="flex-1 text-xs px-2.5 py-1.5 rounded-md border border-border bg-bg-input
+                           outline-none focus:border-border-focus text-text placeholder:text-text-muted"
+                placeholder="Why are you dismissing this?"
+              />
               <button
-                onClick={handleDismissReview}
-                className="text-xs text-danger hover:text-danger/80 transition-colors"
+                onClick={() => handleDismissReview(dismissComment)}
+                className="text-xs px-2.5 py-1.5 rounded-md bg-danger text-text-inverse
+                           hover:opacity-90 transition-colors shrink-0"
               >
                 Dismiss
               </button>
+            </div>
+          </div>
+        )}
+        <div className="px-4 py-3 flex items-center justify-between">
+          {isReview ? (
+            <>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleDismissReview()}
+                  className="text-xs text-danger hover:text-danger/80 transition-colors"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => { setShowDismissComment(s => !s); setTimeout(() => dismissCommentRef.current?.focus(), 0) }}
+                  className="text-xs text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  with reason...
+                </button>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={onClose}

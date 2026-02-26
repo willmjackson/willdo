@@ -177,8 +177,8 @@ export function registerIpcHandlers(): void {
     return task
   })
 
-  ipcMain.handle('review:dismiss', (_event, id: string) => {
-    dismissReview(id)
+  ipcMain.handle('review:dismiss', (_event, id: string, comment?: string) => {
+    dismissReview(id, comment)
     updateDockBadge()
     pushTasks().catch(console.error)
   })

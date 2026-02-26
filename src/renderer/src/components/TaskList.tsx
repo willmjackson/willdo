@@ -26,7 +26,7 @@ interface TaskListProps {
   onLaunchClaude: (task: Task) => void
   onReorder: (id: string, newOrder: number) => Promise<void>
   onAcceptReview: (id: string) => Promise<Task>
-  onDismissReview: (id: string) => Promise<void>
+  onDismissReview: (id: string, comment?: string) => Promise<void>
   view: 'inbox' | 'today'
 }
 
