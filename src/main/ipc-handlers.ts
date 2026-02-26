@@ -17,7 +17,11 @@ import {
   setSetting,
   markClaudeLaunched,
   listCompletedTasks,
-  getCompletionStats
+  getCompletionStats,
+  acceptReview,
+  dismissReview,
+  logReviewEdit,
+  listReviewFeedback
 } from './db'
 import { pickAndImportCSV } from './todoist-import'
 import { pushTasks } from './sync'
@@ -163,6 +167,24 @@ export function registerIpcHandlers(): void {
       })
       child.unref()
     }
+  })
+
+  // Review handlers
+  ipcMain.handle('review:accept', (_event, id: string) => {
+    const task = acceptReview(id)
+    updateDockBadge()
+    pushTasks().catch(console.error)
+    return task
+  })
+
+  ipcMain.handle('review:dismiss', (_event, id: string) => {
+    dismissReview(id)
+    updateDockBadge()
+    pushTasks().catch(console.error)
+  })
+
+  ipcMain.handle('review:feedback', (_event, limit?: number) => {
+    return listReviewFeedback(limit)
   })
 
   ipcMain.handle('history:list', (_event, limit?: number) => {

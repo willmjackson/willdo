@@ -1,3 +1,15 @@
+export type TaskStatus = 'active' | 'review'
+
+export interface ReviewContext {
+  source: 'granola'
+  meeting_id: string
+  meeting_title: string
+  meeting_date: string
+  meeting_url: string
+  participants: string[]
+  source_text: string
+}
+
 export interface Task {
   id: string
   title: string
@@ -12,6 +24,8 @@ export interface Task {
   updated_at: string
   todoist_id: string | null
   claude_launched_at: string | null
+  status: TaskStatus
+  context: string | null // JSON-serialized ReviewContext
 }
 
 export interface CreateTaskInput {
@@ -22,6 +36,8 @@ export interface CreateTaskInput {
   rrule?: string | null
   rrule_human?: string | null
   is_recurring?: boolean
+  status?: TaskStatus
+  context?: string | null
 }
 
 export interface UpdateTaskInput {
@@ -34,6 +50,21 @@ export interface UpdateTaskInput {
   is_recurring?: boolean
   is_completed?: boolean
   sort_order?: number
+  status?: TaskStatus
+  context?: string | null
+}
+
+export type ReviewAction = 'accepted' | 'edited' | 'dismissed'
+
+export interface ReviewFeedback {
+  id: string
+  task_id: string
+  action: ReviewAction
+  original_title: string
+  final_title: string | null
+  meeting_title: string | null
+  meeting_id: string | null
+  created_at: string
 }
 
 export interface Completion {
@@ -102,4 +133,7 @@ export type IpcChannels = {
   'todoist:import': { args: [token: string]; return: ImportProgress }
   'history:list': { args: [limit?: number]; return: CompletedTaskRow[] }
   'history:stats': { args: []; return: CompletionStats }
+  'review:accept': { args: [id: string]; return: Task }
+  'review:dismiss': { args: [id: string]; return: void }
+  'review:feedback': { args: [limit?: number]; return: ReviewFeedback[] }
 }

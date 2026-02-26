@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'path'
-import type { Task, CreateTaskInput, UpdateTaskInput, Completion, CompletedTaskRow, CompletionStats } from '../shared/types'
+import type { Task, CreateTaskInput, UpdateTaskInput, Completion, CompletedTaskRow, CompletionStats, ReviewFeedback, ReviewAction } from '../shared/types'
 
 let db: Database.Database
 
@@ -49,6 +49,22 @@ function migrate(): void {
   try { db.exec('ALTER TABLE tasks ADD COLUMN claude_launched_at TEXT') } catch { /* already exists */ }
   try { db.exec('ALTER TABLE completions ADD COLUMN launched_with_claude INTEGER DEFAULT 0') } catch { /* already exists */ }
   try { db.exec('ALTER TABLE tasks ADD COLUMN due_time TEXT') } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE tasks ADD COLUMN status TEXT DEFAULT 'active'") } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE tasks ADD COLUMN context TEXT') } catch { /* already exists */ }
+
+  // Review feedback table for learning loop
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS review_feedback (
+      id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+      task_id         TEXT NOT NULL,
+      action          TEXT NOT NULL,
+      original_title  TEXT,
+      final_title     TEXT,
+      meeting_title   TEXT,
+      meeting_id      TEXT,
+      created_at      TEXT DEFAULT (datetime('now'))
+    )
+  `)
 }
 
 /**
@@ -120,14 +136,17 @@ export function createTask(input: CreateTaskInput): Task {
     dueDate = computeNextOccurrence(input.rrule)
   }
 
+  const status = input.status ?? 'active'
+  const context = input.context ?? null
+
   const stmt = input.id
     ? db.prepare(`
-        INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order, status, context)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
     : db.prepare(`
-        INSERT INTO tasks (title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO tasks (title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order, status, context)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
   const params = [
     ...(input.id ? [input.id] : []),
@@ -137,7 +156,9 @@ export function createTask(input: CreateTaskInput): Task {
     input.rrule ?? null,
     input.rrule_human ?? null,
     input.is_recurring ? 1 : 0,
-    sortOrder
+    sortOrder,
+    status,
+    context
   ]
   const result = stmt.run(...params)
   return db.prepare('SELECT * FROM tasks WHERE rowid = ?').get(result.lastInsertRowid) as Task
@@ -178,6 +199,14 @@ export function updateTask(input: UpdateTaskInput): Task {
   if (input.sort_order !== undefined) {
     sets.push('sort_order = ?')
     values.push(input.sort_order)
+  }
+  if (input.status !== undefined) {
+    sets.push('status = ?')
+    values.push(input.status)
+  }
+  if (input.context !== undefined) {
+    sets.push('context = ?')
+    values.push(input.context)
   }
 
   sets.push("updated_at = datetime('now')")
@@ -315,6 +344,58 @@ export function getSetting(key: string): string | null {
 
 export function setSetting(key: string, value: string): void {
   db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value)
+}
+
+// --- Review feedback ---
+
+function extractMeetingFromContext(task: Task): { meeting_title: string | null; meeting_id: string | null } {
+  if (!task.context) return { meeting_title: null, meeting_id: null }
+  try {
+    const ctx = JSON.parse(task.context)
+    return { meeting_title: ctx.meeting_title ?? null, meeting_id: ctx.meeting_id ?? null }
+  } catch {
+    return { meeting_title: null, meeting_id: null }
+  }
+}
+
+export function acceptReview(id: string): Task {
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task | undefined
+  if (!task) throw new Error(`Task not found: ${id}`)
+
+  const { meeting_title, meeting_id } = extractMeetingFromContext(task)
+  db.prepare(`
+    INSERT INTO review_feedback (task_id, action, original_title, final_title, meeting_title, meeting_id)
+    VALUES (?, 'accepted', ?, ?, ?, ?)
+  `).run(id, task.title, task.title, meeting_title, meeting_id)
+
+  db.prepare("UPDATE tasks SET status = 'active', updated_at = datetime('now') WHERE id = ?").run(id)
+  return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task
+}
+
+export function dismissReview(id: string): void {
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task | undefined
+  if (!task) throw new Error(`Task not found: ${id}`)
+
+  const { meeting_title, meeting_id } = extractMeetingFromContext(task)
+  db.prepare(`
+    INSERT INTO review_feedback (task_id, action, original_title, meeting_title, meeting_id)
+    VALUES (?, 'dismissed', ?, ?, ?)
+  `).run(id, task.title, meeting_title, meeting_id)
+
+  db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
+}
+
+export function logReviewEdit(id: string, originalTitle: string, finalTitle: string, meetingTitle: string | null, meetingId: string | null): void {
+  db.prepare(`
+    INSERT INTO review_feedback (task_id, action, original_title, final_title, meeting_title, meeting_id)
+    VALUES (?, 'edited', ?, ?, ?, ?)
+  `).run(id, originalTitle, finalTitle, meetingTitle, meetingId)
+}
+
+export function listReviewFeedback(limit = 30): ReviewFeedback[] {
+  return db.prepare(
+    'SELECT * FROM review_feedback ORDER BY created_at DESC LIMIT ?'
+  ).all(limit) as ReviewFeedback[]
 }
 
 export function getDb(): Database.Database {

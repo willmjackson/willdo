@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CreateTaskInput, UpdateTaskInput, Task, ImportProgress, CompletedTaskRow, CompletionStats } from '../shared/types'
+import type { CreateTaskInput, UpdateTaskInput, Task, ImportProgress, CompletedTaskRow, CompletionStats, ReviewFeedback } from '../shared/types'
 
 const api = {
   listTasks: (view: 'inbox' | 'today'): Promise<Task[]> =>
@@ -41,6 +41,15 @@ const api = {
 
   setSetting: (key: string, value: string): Promise<void> =>
     ipcRenderer.invoke('settings:set', key, value),
+
+  acceptReview: (id: string): Promise<Task> =>
+    ipcRenderer.invoke('review:accept', id),
+
+  dismissReview: (id: string): Promise<void> =>
+    ipcRenderer.invoke('review:dismiss', id),
+
+  listReviewFeedback: (limit?: number): Promise<ReviewFeedback[]> =>
+    ipcRenderer.invoke('review:feedback', limit),
 
   listCompletedTasks: (limit?: number): Promise<CompletedTaskRow[]> =>
     ipcRenderer.invoke('history:list', limit),

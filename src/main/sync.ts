@@ -62,6 +62,8 @@ export async function pullMobileTasks(): Promise<number> {
     is_recurring: number
     is_completed: number
     sort_order: number
+    status: string
+    context: string | null
   }>
 
   if (pending.length === 0) return 0
@@ -90,6 +92,8 @@ export async function pullMobileTasks(): Promise<number> {
           rrule: task.rrule,
           rrule_human: task.rrule_human,
           is_recurring: !!task.is_recurring,
+          status: task.status as 'active' | 'review' | undefined,
+          context: task.context,
         })
       } else {
         // New task from mobile — create locally with same ID
@@ -101,6 +105,8 @@ export async function pullMobileTasks(): Promise<number> {
           rrule: task.rrule,
           rrule_human: task.rrule_human,
           is_recurring: !!task.is_recurring,
+          status: task.status as 'active' | 'review' | undefined,
+          context: task.context,
         })
       }
       ackIds.push(task.id)

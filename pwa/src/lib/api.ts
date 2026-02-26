@@ -11,6 +11,8 @@ export interface SyncTask {
   created_at: string
   updated_at: string
   source: string
+  status: string
+  context: string | null
 }
 
 function getConfig(): { url: string; key: string } | null {
@@ -94,6 +96,8 @@ export async function updateTask(id: string, fields: {
   rrule?: string | null
   rrule_human?: string | null
   is_recurring?: number
+  status?: string
+  context?: string | null
 }): Promise<SyncTask[]> {
   return apiFetch<SyncTask[]>(`/tasks/${id}`, {
     method: 'PATCH',

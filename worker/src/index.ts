@@ -18,6 +18,8 @@ interface TaskRow {
   updated_at: string
   source: string
   synced: number
+  status: string
+  context: string | null
 }
 
 function corsHeaders(origin: string): Record<string, string> {
@@ -81,12 +83,14 @@ export default {
           rrule_human?: string | null
           is_recurring?: boolean
           sort_order: number
+          status?: string
+          context?: string | null
         }>()
 
         const now = new Date().toISOString()
         await env.DB.prepare(
-          `INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order, created_at, updated_at, source, synced)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mobile', 0)`
+          `INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, sort_order, created_at, updated_at, source, synced, status, context)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mobile', 0, ?, ?)`
         ).bind(
           body.id,
           body.title,
@@ -98,6 +102,8 @@ export default {
           body.sort_order,
           now,
           now,
+          body.status ?? 'active',
+          body.context ?? null,
         ).run()
 
         // Return all active tasks
@@ -132,6 +138,8 @@ export default {
           rrule?: string | null
           rrule_human?: string | null
           is_recurring?: number
+          status?: string
+          context?: string | null
         }>()
         const sets: string[] = []
         const vals: unknown[] = []
@@ -141,6 +149,8 @@ export default {
         if (body.rrule !== undefined) { sets.push('rrule = ?'); vals.push(body.rrule) }
         if (body.rrule_human !== undefined) { sets.push('rrule_human = ?'); vals.push(body.rrule_human) }
         if (body.is_recurring !== undefined) { sets.push('is_recurring = ?'); vals.push(body.is_recurring) }
+        if (body.status !== undefined) { sets.push('status = ?'); vals.push(body.status) }
+        if (body.context !== undefined) { sets.push('context = ?'); vals.push(body.context) }
         sets.push("source = 'mobile'", 'synced = 0', 'updated_at = ?')
         vals.push(new Date().toISOString(), taskId)
         await env.DB.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run()
@@ -177,8 +187,8 @@ export default {
         // Insert desktop tasks, but don't overwrite unsynced mobile edits
         if (body.tasks.length > 0) {
           const stmt = env.DB.prepare(
-            `INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, is_completed, sort_order, created_at, updated_at, source, synced)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop', 1)
+            `INSERT INTO tasks (id, title, due_date, due_time, rrule, rrule_human, is_recurring, is_completed, sort_order, created_at, updated_at, source, synced, status, context)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop', 1, ?, ?)
              ON CONFLICT(id) DO UPDATE SET
                title = excluded.title,
                due_date = excluded.due_date,
@@ -191,11 +201,13 @@ export default {
                created_at = excluded.created_at,
                updated_at = excluded.updated_at,
                source = 'desktop',
-               synced = 1
+               synced = 1,
+               status = excluded.status,
+               context = excluded.context
              WHERE source != 'mobile' OR synced != 0`
           )
           const batch = body.tasks.map(t =>
-            stmt.bind(t.id, t.title, t.due_date, t.due_time ?? null, t.rrule, t.rrule_human, t.is_recurring, t.is_completed, t.sort_order, t.created_at, t.updated_at)
+            stmt.bind(t.id, t.title, t.due_date, t.due_time ?? null, t.rrule, t.rrule_human, t.is_recurring, t.is_completed, t.sort_order, t.created_at, t.updated_at, t.status ?? 'active', t.context ?? null)
           )
           await env.DB.batch(batch)
         }
