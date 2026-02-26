@@ -57,5 +57,16 @@ export function useTasks(view: 'inbox' | 'today') {
     await refresh()
   }, [refresh])
 
-  return { tasks, loading, refresh, addTask, completeTask, deleteTask, updateTask, reorderTasks }
+  const acceptReview = useCallback(async (id: string) => {
+    const updated = await api.acceptReview(id)
+    await refresh()
+    return updated
+  }, [refresh])
+
+  const dismissReview = useCallback(async (id: string) => {
+    await api.dismissReview(id)
+    await refresh()
+  }, [refresh])
+
+  return { tasks, loading, refresh, addTask, completeTask, deleteTask, updateTask, reorderTasks, acceptReview, dismissReview }
 }

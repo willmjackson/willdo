@@ -1,12 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { extractRecurrence, formatRelativeDate, formatTime } from '@willdo/shared'
-import type { Task, UpdateTaskInput } from '../../../shared/types'
+import type { Task, UpdateTaskInput, ReviewContext } from '../../../shared/types'
 
 interface TaskEditModalProps {
   task: Task
   onSave: (input: UpdateTaskInput) => Promise<void>
   onDelete: (id: string) => Promise<void>
   onClose: () => void
+  onAcceptReview?: (id: string) => Promise<Task>
+  onDismissReview?: (id: string) => Promise<void>
+}
+
+function parseContext(task: Task): ReviewContext | null {
+  if (!task.context) return null
+  try {
+    return JSON.parse(task.context) as ReviewContext
+  } catch {
+    return null
+  }
 }
 
 function buildCalendarDays(year: number, month: number): (number | null)[] {
@@ -43,7 +54,7 @@ function buildRecurrencePresets(dueDate: string): { label: string; detail: strin
   ]
 }
 
-export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModalProps) {
+export function TaskEditModal({ task, onSave, onDelete, onClose, onAcceptReview, onDismissReview }: TaskEditModalProps) {
   const [title, setTitle] = useState(task.title)
   const [dueDate, setDueDate] = useState(task.due_date || '')
   const [dueTime, setDueTime] = useState(task.due_time || '')
@@ -53,6 +64,9 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
   const [saving, setSaving] = useState(false)
   const titleRef = useRef<HTMLTextAreaElement>(null)
   const customRecRef = useRef<HTMLInputElement>(null)
+
+  const isReview = task.status === 'review'
+  const ctx = isReview ? parseContext(task) : null
 
   // Calendar state
   const initialDate = dueDate ? new Date(dueDate + 'T00:00:00') : new Date()
@@ -151,6 +165,40 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
     }
   }
 
+  const handleAcceptReview = async () => {
+    if (!onAcceptReview) return
+    setSaving(true)
+    try {
+      // If title was edited, save first then accept
+      const titleChanged = title.trim() !== task.title
+      const dateChanged = (dueDate || null) !== task.due_date
+      if (titleChanged || dateChanged) {
+        const rec = recurrenceText.trim() ? extractRecurrence(recurrenceText.trim()) : { result: null, remainder: recurrenceText }
+        await onSave({
+          id: task.id,
+          title: title.trim() || task.title,
+          due_date: dueDate || null,
+          due_time: dueTime || null,
+          rrule: rec.result?.rrule ?? null,
+          rrule_human: rec.result?.rrule_human ?? null,
+          is_recurring: rec.result !== null,
+        })
+      }
+      await onAcceptReview(task.id)
+      onClose()
+    } catch (e) {
+      console.error('Accept failed:', e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDismissReview = async () => {
+    if (!onDismissReview) return
+    await onDismissReview(task.id)
+    onClose()
+  }
+
   const handleDelete = async () => {
     await onDelete(task.id)
     onClose()
@@ -164,13 +212,46 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span className="text-xs text-text-muted font-medium uppercase tracking-wide">Edit Task</span>
+          <span className={`text-xs font-medium uppercase tracking-wide ${isReview ? 'text-review-text' : 'text-text-muted'}`}>
+            {isReview ? 'Review Task' : 'Edit Task'}
+          </span>
           <button onClick={onClose} className="text-text-muted hover:text-text transition-colors">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" />
             </svg>
           </button>
         </div>
+
+        {/* Meeting context (review tasks only) */}
+        {isReview && ctx && (
+          <>
+            <div className="mx-4 mb-3 rounded-lg bg-review/60 border border-review-border/40 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" className="text-review-accent shrink-0">
+                  <path d="M1.5 14.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V4.75a.25.25 0 0 0-.25-.25h-2.5a.75.75 0 0 1 0-1.5h2.5c.966 0 1.75.784 1.75 1.75v9.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25v-9.5C0 3.784.784 3 1.75 3h2.5a.75.75 0 0 1 0 1.5h-2.5a.25.25 0 0 0-.25.25zM8 1a.75.75 0 0 1 .75.75v6.44l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 0 1 1.06-1.06l1.22 1.22V1.75A.75.75 0 0 1 8 1z" />
+                </svg>
+                <a
+                  href={ctx.meeting_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-review-text hover:underline truncate"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {ctx.meeting_title}
+                </a>
+                <span className="text-[10px] text-text-muted shrink-0">{ctx.meeting_date}</span>
+              </div>
+              {ctx.participants.length > 0 && (
+                <div className="text-[10px] text-text-muted mb-1.5">
+                  With: {ctx.participants.join(', ')}
+                </div>
+              )}
+              <div className="text-xs text-text-secondary italic leading-relaxed">
+                &ldquo;{ctx.source_text}&rdquo;
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Title */}
         <div className="px-4 pb-3">
@@ -383,29 +464,59 @@ export function TaskEditModal({ task, onSave, onDelete, onClose }: TaskEditModal
 
         {/* Actions */}
         <div className="px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={handleDelete}
-            className="text-xs text-danger hover:text-danger/80 transition-colors"
-          >
-            Delete task
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="text-xs px-3 py-1.5 rounded-md border border-border text-text-secondary
-                         hover:bg-bg-hover transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="text-xs px-3 py-1.5 rounded-md bg-accent text-text-inverse
-                         hover:bg-accent-hover transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+          {isReview ? (
+            <>
+              <button
+                onClick={handleDismissReview}
+                className="text-xs text-danger hover:text-danger/80 transition-colors"
+              >
+                Dismiss
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={onClose}
+                  className="text-xs px-3 py-1.5 rounded-md border border-border text-text-secondary
+                             hover:bg-bg-hover transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAcceptReview}
+                  disabled={saving}
+                  className="text-xs px-3 py-1.5 rounded-md bg-review-accent text-text-inverse
+                             hover:opacity-90 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Accepting...' : 'Accept'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleDelete}
+                className="text-xs text-danger hover:text-danger/80 transition-colors"
+              >
+                Delete task
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={onClose}
+                  className="text-xs px-3 py-1.5 rounded-md border border-border text-text-secondary
+                             hover:bg-bg-hover transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="text-xs px-3 py-1.5 rounded-md bg-accent text-text-inverse
+                             hover:bg-accent-hover transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

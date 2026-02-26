@@ -27,7 +27,7 @@ export default function App() {
   const [toast, setToast] = useState<Toast | null>(null)
   const toastCounter = useRef(0)
   const taskView = view === 'history' ? 'inbox' : view
-  const { tasks, loading, refresh, addTask, completeTask, deleteTask, updateTask, reorderTasks } = useTasks(taskView)
+  const { tasks, loading, refresh, addTask, completeTask, deleteTask, updateTask, reorderTasks, acceptReview, dismissReview } = useTasks(taskView)
   const history = useHistory()
 
   // Load history when switching to history tab
@@ -63,6 +63,17 @@ export default function App() {
     history.refresh()
     return updated
   }, [tasks, completeTask, showToast, history.refresh])
+
+  const handleAcceptReview = useCallback(async (id: string): Promise<Task> => {
+    const updated = await acceptReview(id)
+    showToast('Task accepted')
+    return updated
+  }, [acceptReview, showToast])
+
+  const handleDismissReview = useCallback(async (id: string): Promise<void> => {
+    await dismissReview(id)
+    showToast('Task dismissed')
+  }, [dismissReview, showToast])
 
   useEffect(() => {
     window.api?.getDueTodayCount().then(setTodayCount)
@@ -118,6 +129,8 @@ export default function App() {
               onEdit={setEditingTask}
               onLaunchClaude={handleLaunchClaude}
               onReorder={reorderTasks}
+              onAcceptReview={handleAcceptReview}
+              onDismissReview={handleDismissReview}
               view={taskView}
             />
           )}
@@ -167,6 +180,8 @@ export default function App() {
           onSave={async (input) => { await updateTask(input); setEditingTask(null) }}
           onDelete={async (id) => { await deleteTask(id); setEditingTask(null) }}
           onClose={() => setEditingTask(null)}
+          onAcceptReview={async (id) => { await handleAcceptReview(id); setEditingTask(null) }}
+          onDismissReview={async (id) => { await handleDismissReview(id); setEditingTask(null) }}
         />
       )}
 

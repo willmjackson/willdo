@@ -58,6 +58,12 @@
   --color-rec-yearly: #fdf0ed;        /* rose */
   --color-rec-yearly-text: #b8453a;   /* brick */
 
+  /* ---- Review (from Granola) ---- */
+  --color-review: #fef8e7;             /* warm amber wash */
+  --color-review-text: #92660a;        /* deep amber */
+  --color-review-border: #e9c86e;      /* golden border */
+  --color-review-accent: #d49b2a;      /* amber accent */
+
   /* ---- Claude badge ---- */
   --color-claude: #e8f4f8;
   --color-claude-text: #2a7c8f;
